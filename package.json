@@ -1,11 +1,11 @@
 {
-  "name": "tutorializator-2049",
-  "version": "2.1.0",
-  "description": "Tutorializator 2049 - Generate project documentation, PDFs, DOCX and MP4 videos from Markdown. Project scaffolding, progress tracking, SRS templates.",
+  "name": "replicant-2049",
+  "version": "2.2.0",
+  "description": "Replicant 2049 - AI-powered project documentation generator. Analyze code, generate SRS/PLAN/README via GitHub Models. Export to PDF, DOCX, MP4.",
   "type": "module",
   "bin": {
-    "tutorializator": "./src/cli.mjs",
-    "tutorial-pdf": "./src/cli.mjs"
+    "replicant": "./src/cli.mjs",
+    "replicant-pdf": "./src/cli.mjs"
   },
   "main": "./src/export-pdf.mjs",
   "exports": {
@@ -17,9 +17,11 @@
   "scripts": {
     "init": "node src/init-project.mjs",
     "sync": "node src/sync-docs.mjs",
-    "generate": "node src/cli.mjs export",
-    "generate:video": "node src/cli.mjs export --video",
-    "generate:all": "node src/cli.mjs export --pdf --video --docx",
+    "generate": "node src/generate-docs.mjs",
+    "generate:all": "node src/generate-docs.mjs --all",
+    "export": "node src/cli.mjs export",
+    "export:video": "node src/cli.mjs export --video",
+    "export:all": "node src/cli.mjs export --pdf --video --docx",
     "example": "node src/cli.mjs export --config example/tutorial.config.js"
   },
   "keywords": [
@@ -39,7 +41,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/CamiloIncba/tutorial-pdf-video-generator.git"
+    "url": "https://github.com/CamiloIncba/replicant-2049.git"
   },
   "dependencies": {
     "docx": "^9.5.3",

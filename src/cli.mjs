@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 /**
  * ============================================================
- *  CLI — Tutorializator-2049
+ *  CLI — Replicant-2049
  *  Generate professional documentation, PDFs, and videos
  * ============================================================
  *
  *  Usage:
- *    npx tutorializator <command> [options]
+ *    npx replicant <command> [options]
  *
  *  Commands:
  *    init              Initialize a new project with documentation structure
  *    sync              Check and track documentation progress
+ *    generate          Generate final documents using Claude API
  *    export            Generate PDF/DOCX/Video from Markdown
  *    (no command)      Legacy mode: export with --pdf/--docx/--video flags
  * ============================================================
@@ -23,6 +24,7 @@ import { spawn } from 'child_process';
 import { exportTutorialToPDF } from './export-pdf.mjs';
 import { exportTutorialToVideo } from './export-video.mjs';
 import { exportToDocx } from './export-docx.mjs';
+import { exportTutorialToHTML } from './export-html.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -42,7 +44,7 @@ function getCommand() {
   const firstArg = args[0];
   
   // Check if first arg is a command
-  if (firstArg === 'init' || firstArg === 'sync' || firstArg === 'export') {
+  if (firstArg === 'init' || firstArg === 'sync' || firstArg === 'generate' || firstArg === 'export' || firstArg === 'audit') {
     return firstArg;
   }
   
@@ -80,6 +82,9 @@ function parseExportArgs() {
   let doPdf = false;
   let doVideo = false;
   let doDocx = false;
+  let doHtml = false;
+  let skipCapture = false;
+  let outputDir = null;
   
   // Skip 'export' command if present
   const startIndex = args[0] === 'export' ? 1 : 0;
@@ -88,12 +93,19 @@ function parseExportArgs() {
     if (args[i] === '--config' && args[i + 1]) {
       configPath = resolve(args[i + 1]);
       i++;
+    } else if (args[i] === '--output-dir' && args[i + 1]) {
+      outputDir = resolve(args[i + 1]);
+      i++;
     } else if (args[i] === '--pdf') {
       doPdf = true;
     } else if (args[i] === '--video') {
       doVideo = true;
     } else if (args[i] === '--docx') {
       doDocx = true;
+    } else if (args[i] === '--html') {
+      doHtml = true;
+    } else if (args[i] === '--skip-capture') {
+      skipCapture = true;
     } else if (args[i] === '--help' || args[i] === '-h') {
       printHelp();
       process.exit(0);
@@ -111,45 +123,99 @@ function parseExportArgs() {
     configPath = resolve(process.cwd(), 'tutorial.config.js');
   }
 
-  return { configPath, doPdf, doVideo, doDocx };
+  return { configPath, doPdf, doVideo, doDocx, doHtml, skipCapture, outputDir };
 }
 
 function printHelp() {
   console.log(`
-  ${colors.bright}${colors.cyan}Tutorializator-2049${colors.reset}
+  ${colors.bright}${colors.cyan}Replicant-2049${colors.reset}
   ────────────────────────────────────
 
   Generate professional documentation, PDFs, and videos.
 
   ${colors.bright}Usage:${colors.reset}
-    npx tutorializator <command> [options]
+    npx replicant <command> [options]
 
   ${colors.bright}Commands:${colors.reset}
     ${colors.green}init${colors.reset}              Initialize a new project with documentation
     ${colors.green}sync${colors.reset}              Check and track documentation progress
+    ${colors.green}generate${colors.reset}          Generate final documents using Claude API
     ${colors.green}export${colors.reset}            Generate PDF/DOCX/Video from Markdown
+    ${colors.green}audit${colors.reset}             Audit project against mandatory standards
 
   ${colors.bright}Export Options:${colors.reset}
     --config <path>   Path to config file (default: ./tutorial.config.js)
     --pdf             Generate PDF (default if no flag specified)
     --docx            Generate DOCX (Word document)
+    --html            Generate HTML fragment for in-app embedding
     --video           Generate MP4 video
+    --output-dir <p>  Output directory (for --html export)
+    --skip-capture    Skip screenshot capture (use existing images)
 
   ${colors.bright}Global Options:${colors.reset}
     --help, -h        Show this help
     --version, -v     Show version
 
   ${colors.bright}Examples:${colors.reset}
-    npx tutorializator init --project TC --client NOR-PAN
-    npx tutorializator sync --check
-    npx tutorializator export --config ./tutorial.config.js --pdf
-    npx tutorializator --pdf --video   # Legacy mode
+    npx replicant init --project TC --client NOR-PAN
+    npx replicant sync --check
+    npx replicant generate --project TC
+    npx replicant generate --all --dir "C:\\Proyectos\\NOR-PAN"
+    npx replicant export --config ./tutorial.config.js --pdf
+    npx replicant export --config ./tutorial.config.js --skip-capture
+    npx replicant export --config ./tutorial.config.js --html --output-dir ./public/tutorial
+    npx replicant --pdf --video   # Legacy mode
+    npx replicant audit --dir "C:\\Proyectos\\NOR-PAN"
+    npx replicant audit --dir . --verbose
+    npx replicant audit --dir . --json
   `);
 }
 
-// ─── Export handler ────────────────────────────────────────────
+// ─── Run capture script ────────────────────────────────────────
+async function runCaptureScript(captureConfig, configDir) {
+  const scriptPath = resolve(configDir, captureConfig.script);
+
+  if (!existsSync(scriptPath)) {
+    console.error(`\n  ❌ Capture script not found: ${scriptPath}`);
+    process.exit(1);
+  }
+
+  // Check if app is reachable
+  if (captureConfig.appUrl) {
+    console.log(`  🔍 Verificando que la app esté corriendo en ${captureConfig.appUrl}...`);
+    try {
+      const resp = await fetch(captureConfig.appUrl, { signal: AbortSignal.timeout(5000) });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      console.log(`  ✅ App detectada\n`);
+    } catch {
+      console.error(`\n  ❌ La app no está corriendo en ${captureConfig.appUrl}`);
+      console.error(`  Iniciá la app antes de exportar, o usá --skip-capture para usar screenshots existentes.\n`);
+      process.exit(1);
+    }
+  }
+
+  console.log(`  📸 Ejecutando captura de screenshots...`);
+  console.log(`  Script: ${scriptPath}\n`);
+
+  return new Promise((resolveP, reject) => {
+    const child = spawn('node', [scriptPath, '--skip-pdf'], {
+      stdio: 'inherit',
+      cwd: dirname(scriptPath),
+    });
+    child.on('close', (code) => {
+      if (code === 0) {
+        console.log(`\n  ✅ Screenshots capturados exitosamente\n`);
+        resolveP();
+      } else {
+        reject(new Error(`Capture script exited with code ${code}`));
+      }
+    });
+    child.on('error', reject);
+  });
+}
+
 async function handleExport() {
-  const { configPath, doPdf, doVideo, doDocx } = parseExportArgs();
+  const { configPath, doPdf, doVideo, doDocx, doHtml, skipCapture, outputDir } = parseExportArgs();
 
   if (!existsSync(configPath)) {
     console.error(`\n  ❌ Config file not found: ${configPath}`);
@@ -166,7 +232,7 @@ async function handleExport() {
 
   // Auto-detect format from output extension when no explicit flag was passed
   const outputIsDocx = config.output && config.output.endsWith('.docx');
-  const explicitFlags = doDocx || doPdf || doVideo;
+  const explicitFlags = doDocx || doPdf || doVideo || doHtml;
 
   // If user passed --docx or output is .docx (and no explicit --pdf)
   const shouldDocx = doDocx || (outputIsDocx && !doPdf);
@@ -181,6 +247,7 @@ async function handleExport() {
     input: resolve(configDir, config.input),
     output: resolve(configDir, config.output),
     imagesDir: resolve(configDir, config.imagesDir || './SS'),
+    htmlOutputDir: config.htmlOutputDir ? resolve(configDir, config.htmlOutputDir) : null,
     cover: {
       ...config.cover,
       logo: config.cover?.logo ? resolve(configDir, config.cover.logo) : null,
@@ -203,6 +270,16 @@ async function handleExport() {
     }
   }
 
+  // ─── Capture screenshots before PDF/DOCX ─────────────────────
+  const needsCapture = shouldPdf || shouldDocx || doHtml;
+  if (!skipCapture && config.capture?.script && needsCapture) {
+    await runCaptureScript(config.capture, configDir);
+  } else if (skipCapture) {
+    console.log(`  ⏭️  Captura omitida (--skip-capture)\n`);
+  } else if (!config.capture?.script && needsCapture) {
+    console.log(`  ℹ️  Sin script de captura configurado, usando imágenes existentes\n`);
+  }
+
   // Execute requested exports
   if (shouldDocx) {
     const docxOutput = resolvedConfig.output.endsWith('.docx')
@@ -213,6 +290,10 @@ async function handleExport() {
 
   if (shouldPdf) {
     await exportTutorialToPDF(resolvedConfig);
+  }
+
+  if (doHtml) {
+    await exportTutorialToHTML(resolvedConfig, { outputDir });
   }
 
   if (doVideo) {
@@ -231,6 +312,14 @@ async function main() {
     
     case 'sync':
       await runSubcommand('sync-docs.mjs');
+      break;
+    
+    case 'generate':
+      await runSubcommand('generate-docs.mjs');
+      break;
+    
+    case 'audit':
+      await runSubcommand('audit.mjs');
       break;
     
     case 'export':

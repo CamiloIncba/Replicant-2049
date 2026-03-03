@@ -1,7 +1,7 @@
 /**
  * ============================================================
  *  slide-builder.mjs — Parse Markdown into presentation slides
- *  tutorial-pdf-video-generator
+ *  replicant-2049
  * ============================================================
  *
  *  Reads the tutorial Markdown and splits it into an ordered

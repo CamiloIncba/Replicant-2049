@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * ============================================================
- *  sync-docs.mjs — Tutorializator-2049
+ *  sync-docs.mjs — Replicant-2049
  *  Sync and track project documentation progress
  * ============================================================
  *
  *  Usage:
- *    npx tutorializator sync [--check] [--update-progress]
+ *    npx replicant sync [--check] [--update-progress]
  *
  *  Features:
  *    - Check completeness of documentation
@@ -48,12 +48,16 @@ const log = {
 function parseArgs() {
   const args = process.argv.slice(2);
   let configPath = null;
+  let projectName = null;
   let checkOnly = false;
   let updateProgress = false;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--config' && args[i + 1]) {
       configPath = resolve(args[i + 1]);
+      i++;
+    } else if (args[i] === '--project' && args[i + 1]) {
+      projectName = args[i + 1];
       i++;
     } else if (args[i] === '--check') {
       checkOnly = true;
@@ -65,26 +69,27 @@ function parseArgs() {
     }
   }
 
-  return { configPath, checkOnly, updateProgress };
+  return { configPath, projectName, checkOnly, updateProgress };
 }
 
 function printHelp() {
   console.log(`
-${colors.bright}Tutorializator-2049 — Documentation Sync${colors.reset}
+${colors.bright}Replicant-2049 — Documentation Sync${colors.reset}
 
 ${colors.cyan}Usage:${colors.reset}
-  npx tutorializator sync [options]
+  npx replicant sync [options]
 
 ${colors.cyan}Options:${colors.reset}
+  --project NAME      Project name (e.g., TC, APP-PAGOS-PENDIENTES)
   --config PATH       Path to project.config.js
   --check             Check documentation completeness only
   --update-progress   Update progress tracking in CLAUDE.md
   --help, -h          Show this help
 
 ${colors.cyan}Examples:${colors.reset}
-  npx tutorializator sync
-  npx tutorializator sync --check
-  npx tutorializator sync --config ./project.config.js
+  npx replicant sync --project TC
+  npx replicant sync --project APP-PAGOS-PENDIENTES
+  npx replicant sync --check
 `);
 }
 
@@ -115,15 +120,46 @@ async function loadConfig(configPath) {
 }
 
 // ─── Documentation checks ──────────────────────────────────────
-function findMoreFolder(startDir) {
+function findMoreFolder(startDir, projectName = null) {
   const items = readdirSync(startDir);
   
-  for (const item of items) {
-    if (item.endsWith('-more') && statSync(join(startDir, item)).isDirectory()) {
-      return join(startDir, item);
+  // If project name specified, look for that specific folder
+  if (projectName) {
+    const targetFolder = `${projectName}-more`;
+    const targetFolderUpper = `${projectName.toUpperCase()}-more`;
+    
+    for (const item of items) {
+      if ((item === targetFolder || item === targetFolderUpper) && 
+          statSync(join(startDir, item)).isDirectory()) {
+        return join(startDir, item);
+      }
     }
+    return null;
   }
   
+  // No project specified - check if we're inside a -more folder
+  const currentFolder = startDir.split(/[\\/]/).pop();
+  if (currentFolder.endsWith('-more')) {
+    return startDir;
+  }
+  
+  // List available -more folders
+  const moreFolders = items.filter(item => 
+    item.endsWith('-more') && statSync(join(startDir, item)).isDirectory()
+  );
+  
+  if (moreFolders.length === 0) {
+    return null;
+  }
+  
+  if (moreFolders.length === 1) {
+    return join(startDir, moreFolders[0]);
+  }
+  
+  // Multiple folders found - list them and ask user to specify
+  log.warn(`Multiple project folders found:`);
+  moreFolders.forEach(f => console.log(`  - ${f.replace('-more', '')}`))
+  log.info(`Use --project NAME to specify which one to check`);
   return null;
 }
 
@@ -267,7 +303,7 @@ function printReport(docs, folders, progress, moreDir) {
 async function main() {
   const args = parseArgs();
   
-  log.title('🔄 Tutorializator-2049 — Documentation Sync');
+  log.title('🔄 Replicant-2049 — Documentation Sync');
 
   // Load config
   const { config } = await loadConfig(args.configPath);
@@ -276,11 +312,15 @@ async function main() {
   const startDir = process.cwd();
   const moreDir = config?.paths?.docs 
     ? resolve(startDir, config.paths.docs)
-    : findMoreFolder(startDir);
+    : findMoreFolder(startDir, args.projectName);
 
   if (!moreDir) {
-    log.error('Could not find {PROJECT}-more folder.');
-    log.info('Run "npx tutorializator init" first to create project structure.');
+    if (!args.projectName) {
+      log.error('Could not find {PROJECT}-more folder.');
+      log.info('Use --project NAME or run from inside the project folder.');
+    } else {
+      log.error(`Could not find ${args.projectName}-more folder.`);
+    }
     process.exit(1);
   }
 

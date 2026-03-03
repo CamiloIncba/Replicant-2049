@@ -288,7 +288,7 @@ Guardar los PNGs exportados en:
 
 ---
 
-*Diagramas DSL para Eraser.io — Tutorializator-2049 — INCBA*
+*Diagramas DSL para Eraser.io — Replicant-2049 — INCBA*
 ```
 
 ---
@@ -319,4 +319,4 @@ Antes de marcar como completo:
 
 ---
 
-*Skill para Tutorializator-2049 — INCBA*
+*Skill para Replicant-2049 — INCBA*

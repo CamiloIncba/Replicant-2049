@@ -219,4 +219,4 @@ Antes de marcar como completo:
 
 ---
 
-*Skill para Tutorializator-2049 — INCBA*
+*Skill para Replicant-2049 — INCBA*

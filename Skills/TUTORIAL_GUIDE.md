@@ -241,7 +241,7 @@ export default {
 
 ```bash
 # Desde la carpeta -more/ del proyecto
-npx tutorial-pdf --config ./tutorial.config.js
+npx replicant-pdf --config ./tutorial.config.js
 ```
 
 ### 6.2 Qué Hace el Generador

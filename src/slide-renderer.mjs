@@ -1,7 +1,7 @@
 /**
  * ============================================================
  *  slide-renderer.mjs — Render slides to HTML for Playwright
- *  tutorial-pdf-video-generator
+ *  replicant-2049
  * ============================================================
  *
  *  Each slide type has its own HTML template.

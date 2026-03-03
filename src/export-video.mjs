@@ -1,7 +1,7 @@
 /**
  * ============================================================
  *  export-video.mjs — Hybrid video engine (slides + recordings)
- *  tutorial-pdf-video-generator
+ *  replicant-2049
  * ============================================================
  *
  *  Strategy:

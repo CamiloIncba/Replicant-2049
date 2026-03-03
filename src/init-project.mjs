@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * ============================================================
- *  init-project.mjs — Tutorializator-2049
+ *  init-project.mjs — Replicant-2049
  *  Scaffold a new project with documentation structure
  * ============================================================
  *
  *  Usage:
- *    npx tutorializator init [--project NAME] [--client FOLDER]
+ *    npx replicant init [--project NAME] [--client FOLDER]
  *
  *  Creates:
  *    - {PROJECT}-more/ folder with documentation templates
@@ -45,44 +45,77 @@ const log = {
 function parseArgs() {
   const args = process.argv.slice(2);
   let projectName = null;
+  let projectFullName = null;
   let clientFolder = null;
+  let clientFullName = null;
+  let description = null;
+  let pmName = null;
+  let devName = null;
   let targetDir = process.cwd();
+  let nonInteractive = false;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--project' && args[i + 1]) {
       projectName = args[i + 1];
       i++;
+    } else if (args[i] === '--name' && args[i + 1]) {
+      projectFullName = args[i + 1];
+      i++;
     } else if (args[i] === '--client' && args[i + 1]) {
       clientFolder = args[i + 1];
+      i++;
+    } else if (args[i] === '--client-name' && args[i + 1]) {
+      clientFullName = args[i + 1];
+      i++;
+    } else if (args[i] === '--description' && args[i + 1]) {
+      description = args[i + 1];
+      i++;
+    } else if (args[i] === '--pm' && args[i + 1]) {
+      pmName = args[i + 1];
+      i++;
+    } else if (args[i] === '--dev' && args[i + 1]) {
+      devName = args[i + 1];
       i++;
     } else if (args[i] === '--target' && args[i + 1]) {
       targetDir = resolve(args[i + 1]);
       i++;
+    } else if (args[i] === '-y' || args[i] === '--yes') {
+      nonInteractive = true;
     } else if (args[i] === '--help' || args[i] === '-h') {
       printHelp();
       process.exit(0);
     }
   }
 
-  return { projectName, clientFolder, targetDir };
+  return { 
+    projectName, projectFullName, clientFolder, clientFullName, 
+    description, pmName, devName, targetDir, nonInteractive 
+  };
 }
 
 function printHelp() {
   console.log(`
-${colors.bright}Tutorializator-2049 — Project Initializer${colors.reset}
+${colors.bright}Replicant-2049 — Project Initializer${colors.reset}
 
 ${colors.cyan}Usage:${colors.reset}
-  npx tutorializator init [options]
+  npx replicant init [options]
 
 ${colors.cyan}Options:${colors.reset}
-  --project NAME    Project code (e.g., TC, APP-PAGOS)
-  --client FOLDER   Client folder name (e.g., NOR-PAN, INCBA)
-  --target DIR      Target directory (default: current dir)
-  --help, -h        Show this help
+  --project NAME      Project code (e.g., TC, APP-PAGOS)
+  --name FULLNAME     Project full name
+  --client FOLDER     Client folder name (e.g., NOR-PAN, INCBA)
+  --client-name NAME  Client full name
+  --description DESC  Short description
+  --pm NAME           Project Manager name
+  --dev NAME          Developer name
+  --target DIR        Target directory (default: current dir)
+  -y, --yes           Non-interactive mode (use defaults)
+  --help, -h          Show this help
 
 ${colors.cyan}Examples:${colors.reset}
-  npx tutorializator init --project TC --client NOR-PAN
-  npx tutorializator init  # Interactive mode
+  npx replicant init --project TC --client NOR-PAN
+  npx replicant init --project TC --client NOR-PAN -y
+  npx replicant init  # Interactive mode
 `);
 }
 
@@ -103,24 +136,27 @@ async function prompt(question, defaultValue = '') {
 }
 
 async function gatherProjectInfo(args) {
-  log.title('🚀 Tutorializator-2049 — Project Initializer');
+  log.title('🚀 Replicant-2049 — Project Initializer');
 
-  const projectName = args.projectName || await prompt('Project code', 'PROYECTO');
-  const projectFullName = await prompt('Project full name', `Sistema de ${projectName}`);
-  const clientName = args.clientFolder || await prompt('Client folder', 'CLIENTE');
-  const clientFullName = await prompt('Client full name', `${clientName} S.R.L.`);
-  const description = await prompt('Short description', 'Sistema de gestión');
-  const pmName = await prompt('Project Manager', 'Felipe Rebolledo');
-  const devName = await prompt('Developer', 'Camilo Acencio');
+  // Use CLI args or defaults if non-interactive mode
+  const useDefaults = args.nonInteractive;
+  
+  const projectCode = args.projectName || (useDefaults ? 'PROYECTO' : await prompt('Project code', 'PROYECTO'));
+  const projectFullName = args.projectFullName || (useDefaults ? `Sistema de ${projectCode}` : await prompt('Project full name', `Sistema de ${projectCode}`));
+  const clientFolder = args.clientFolder || (useDefaults ? 'CLIENTE' : await prompt('Client folder', 'CLIENTE'));
+  const clientFullName = args.clientFullName || (useDefaults ? `${clientFolder} S.R.L.` : await prompt('Client full name', `${clientFolder} S.R.L.`));
+  const description = args.description || (useDefaults ? 'Sistema de gestión' : await prompt('Short description', 'Sistema de gestión'));
+  const pmName = args.pmName || (useDefaults ? 'Felipe Rebolledo' : await prompt('Project Manager', 'Felipe Rebolledo'));
+  const devName = args.devName || (useDefaults ? 'Camilo Acencio' : await prompt('Developer', 'Camilo Acencio'));
 
   return {
     project: {
-      code: projectName.toUpperCase(),
+      code: projectCode.toUpperCase(),
       name: projectFullName,
       description,
     },
     client: {
-      folder: clientName.toUpperCase(),
+      folder: clientFolder.toUpperCase(),
       name: clientFullName,
     },
     team: {
@@ -167,14 +203,42 @@ function createDocFromTemplate(templateName, outputPath, info) {
     return false;
   }
 
-  // Read the template
-  const templateContent = readFileSync(templatePath, 'utf8');
+  // Read the template and normalize line endings
+  let templateContent = readFileSync(templatePath, 'utf8');
+  templateContent = templateContent.replace(/\r\n/g, '\n');
   
-  // Extract just the template portion (between ```markdown and ```)
-  const match = templateContent.match(/## Plantilla.*?\n\n```markdown\n([\s\S]*?)```/);
+  // Find the start of the template block (```markdown after ## Plantilla)
+  const startMarker = '## Plantilla';
+  const startIndex = templateContent.indexOf(startMarker);
   
-  if (match && match[1]) {
-    const docContent = replaceVariables(match[1], info);
+  if (startIndex === -1) {
+    log.warn(`Could not find "## Plantilla" in: ${templateName}`);
+    return false;
+  }
+  
+  // Find ```markdown after the plantilla header
+  const mdBlockStart = templateContent.indexOf('```markdown\n', startIndex);
+  if (mdBlockStart === -1) {
+    log.warn(`Could not find markdown block in: ${templateName}`);
+    return false;
+  }
+  
+  const contentStart = mdBlockStart + '```markdown\n'.length;
+  
+  // Find the end of the template block - look for ``` at start of line 
+  // followed by section markers (---\n\n## or just ---\n\n*)
+  const afterContent = templateContent.slice(contentStart);
+  const endMatch = afterContent.match(/\n```\n\n---/);
+  
+  if (!endMatch) {
+    log.warn(`Could not find end of template in: ${templateName}`);
+    return false;
+  }
+  
+  const templateMarkdown = afterContent.slice(0, endMatch.index);
+  
+  if (templateMarkdown) {
+    const docContent = replaceVariables(templateMarkdown, info);
     writeFileSync(outputPath, docContent, 'utf8');
     log.success(`Created: ${outputPath}`);
     return true;
@@ -276,7 +340,7 @@ ${colors.cyan}Next steps:${colors.reset}
   1. Review and complete ${colors.bright}SRS.md${colors.reset} with your requirements
   2. Review and complete ${colors.bright}PLAN.md${colors.reset} with your timeline
   3. Use ${colors.bright}CLAUDE.md${colors.reset} as context hub during development
-  4. Run ${colors.bright}npx tutorializator sync${colors.reset} to track progress
+  4. Run ${colors.bright}npx replicant sync${colors.reset} to track progress
 `);
 }
 

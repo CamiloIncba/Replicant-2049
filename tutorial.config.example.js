@@ -2,7 +2,7 @@
  * tutorial.config.js — Example configuration
  *
  * Copy this file to your project's `-more/` folder and customize.
- * Run with: npx tutorial-pdf --config ./tutorial.config.js
+ * Run with: npx replicant-pdf --config ./tutorial.config.js
  */
 
 export default {

@@ -1,15 +1,15 @@
 /**
  * ============================================================
  *  export-pdf.mjs — Generic Markdown → PDF engine
- *  tutorial-pdf-video-generator
+ *  replicant-2049
  * ============================================================
  *
  *  Usage as module:
- *    import { exportTutorialToPDF } from 'tutorial-pdf-video-generator';
+ *    import { exportTutorialToPDF } from 'replicant-2049';
  *    await exportTutorialToPDF(config);
  *
  *  Usage from CLI:
- *    npx tutorial-pdf --config ./tutorial.config.js
+ *    npx replicant-pdf --config ./tutorial.config.js
  *
  * ============================================================
  */
@@ -47,6 +47,17 @@ async function loadThemeCSS(theme) {
   return mod.default || mod.CSS;
 }
 
+// ─── Embed image as base64 ─────────────────────────────────────
+function embedImageAsBase64(imagePath) {
+  if (!imagePath || !existsSync(imagePath)) return null;
+  const ext = extname(imagePath).toLowerCase();
+  const mime = ext === '.svg' ? 'image/svg+xml'
+    : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
+    : 'image/png';
+  const b64 = readFileSync(imagePath).toString('base64');
+  return `data:${mime};base64,${b64}`;
+}
+
 // ─── Build cover HTML ──────────────────────────────────────────
 function buildCover(coverConfig, margins) {
   const today = new Date();
@@ -55,13 +66,69 @@ function buildCover(coverConfig, margins) {
     month: 'long',
   });
 
+  // Detect cover mode: image-background vs card-based
+  const hasBackgroundImage = coverConfig.backgroundImage && existsSync(coverConfig.backgroundImage);
+
+  if (hasBackgroundImage) {
+    return buildImageCover(coverConfig, margins, dateStr);
+  }
+
+  return buildCardCover(coverConfig, margins, dateStr);
+}
+
+// ─── Image-background cover (presupuesto-norpan style) ─────────
+function buildImageCover(coverConfig, margins, dateStr) {
+  const bgDataUri = embedImageAsBase64(coverConfig.backgroundImage);
+  const m = margins || { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 };
+
+  // Meta rows
+  const metaRows = [];
+  if (coverConfig.version) {
+    metaRows.push({ label: 'Versión', value: coverConfig.version });
+  }
+  metaRows.push({ label: 'Fecha', value: coverConfig.date || dateStr });
+  if (coverConfig.classification) {
+    metaRows.push({ label: 'Clasificación', value: coverConfig.classification });
+  }
+  if (coverConfig.meta) {
+    for (const [label, value] of Object.entries(coverConfig.meta)) {
+      metaRows.push({ label, value });
+    }
+  }
+
+  const metaHTML = metaRows
+    .map(
+      (r) => `
+        <div class="cover-meta-row">
+          <span class="cover-meta-label">${r.label}</span>
+          <span class="cover-meta-value">${r.value}</span>
+        </div>`
+    )
+    .join('');
+
+  // Split title: title (left, bold) + subtitle (right, light)
+  const titleLeft = coverConfig.title || 'Documento';
+  const titleRight = coverConfig.subtitle || '';
+
+  return `
+  <div class="cover">
+    <img class="cover-bg" src="${bgDataUri}" alt="" />
+    <div class="cover-overlay">
+      <div class="cover-titles">
+        <div class="cover-title-left">${titleLeft.replace(/\n/g, '<br>')}</div>
+        ${titleRight ? `<div class="cover-title-right">${titleRight.replace(/\n/g, '<br>')}</div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Card-based cover (shadcn-dark style) ──────────────────────
+function buildCardCover(coverConfig, margins, dateStr) {
   // Logo
   let logoTag = '';
   if (coverConfig.logo && existsSync(coverConfig.logo)) {
-    const ext = extname(coverConfig.logo).toLowerCase();
-    const mime = ext === '.svg' ? 'image/svg+xml' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
-    const logoB64 = readFileSync(coverConfig.logo).toString('base64');
-    logoTag = `<img src="data:${mime};base64,${logoB64}" alt="${coverConfig.title || ''}" />`;
+    const logoDataUri = embedImageAsBase64(coverConfig.logo);
+    logoTag = `<img src="${logoDataUri}" alt="${coverConfig.title || ''}" />`;
   } else if (coverConfig.logoText) {
     logoTag = `<span style="font-size:42pt;font-weight:800;color:#fafafa;">${coverConfig.logoText}</span>`;
   }
@@ -75,7 +142,6 @@ function buildCover(coverConfig, margins) {
   if (coverConfig.classification) {
     metaRows.push({ label: 'Clasificación', value: coverConfig.classification });
   }
-  // Custom meta entries
   if (coverConfig.meta) {
     for (const [label, value] of Object.entries(coverConfig.meta)) {
       metaRows.push({ label, value });
@@ -213,6 +279,17 @@ function buildFullHTML(config, css, mdContent) {
   const cover = config.cover ? buildCover(config.cover, config.margins) : '';
   const toc = buildTOC(contentHTML, config.tocTitle);
   const title = config.cover?.title || 'Tutorial';
+  const hasImageCover = config.cover?.backgroundImage && existsSync(config.cover.backgroundImage);
+
+  // When using zero PDF margins (full-bleed cover), inject CSS-based
+  // padding on toc/content to simulate margins for body pages
+  const m = config.margins || { top: 20, right: 18, bottom: 22, left: 18 };
+  const marginCSS = hasImageCover ? `
+    .toc, .content {
+      padding: ${m.top}mm ${m.right || m.left}mm ${m.bottom}mm ${m.left}mm;
+    }
+    @page { size: ${config.format || 'A4'}; margin: 0; }
+  ` : '';
 
   return `<!DOCTYPE html>
 <html lang="${config.lang || 'es'}">
@@ -221,6 +298,7 @@ function buildFullHTML(config, css, mdContent) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   <style>${css}</style>
+  ${marginCSS ? `<style>${marginCSS}</style>` : ''}
 </head>
 <body>
   ${cover}
@@ -294,19 +372,27 @@ export async function exportTutorialToPDF(config, existingBrowser = null) {
   // Margins
   const m = config.margins || { top: 20, right: 18, bottom: 22, left: 18 };
 
+  // If cover has backgroundImage, use zero PDF margins (full-bleed cover)
+  // and let CSS handle margins on content/toc
+  const hasImageCover = config.cover?.backgroundImage && existsSync(config.cover.backgroundImage);
+
+  const pdfMargin = hasImageCover
+    ? { top: '0mm', right: '0mm', bottom: '0mm', left: '0mm' }
+    : {
+        top: `${m.top}mm`,
+        right: `${m.right || m.left}mm`,
+        bottom: `${m.bottom}mm`,
+        left: `${m.left}mm`,
+      };
+
   // Generate PDF
   console.log('  Generando PDF...');
   await page.pdf({
     path: config.output,
     format: config.format || 'A4',
     printBackground: true,
-    margin: {
-      top: `${m.top}mm`,
-      right: `${m.right || m.left}mm`,
-      bottom: `${m.bottom}mm`,
-      left: `${m.left}mm`,
-    },
-    displayHeaderFooter: true,
+    margin: pdfMargin,
+    displayHeaderFooter: !hasImageCover,
     headerTemplate: `
       <div style="width:100%;text-align:right;padding-right:${m.right || m.left}mm;font-size:8px;color:#cbd5e1;font-family:system-ui;">
         ${config.header || ''}

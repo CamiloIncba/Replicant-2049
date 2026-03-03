@@ -1,12 +1,12 @@
 /**
- * Tutorializator-2049 — Project Configuration
+ * Replicant-2049 — Project Configuration
  * 
  * Este archivo define la configuración para generar documentos de un proyecto.
  * Copia este archivo como `project.config.js` en la raíz de tu proyecto.
  * 
  * @example
  * // Ubicación: C:/Proyectos/NOR-PAN/TC/project.config.js
- * // Ejecutar: npx tutorializator init
+ * // Ejecutar: npx replicant init
  */
 
 export default {
@@ -220,7 +220,7 @@ export default {
     primaryColor: '#3B82F6', // Blue
     secondaryColor: '#10B981', // Green
     
-    /** Tema de Tutorializator para exports */
+    /** Tema de Replicant para exports */
     tutorialTheme: 'shadcn-dark',
     videoTheme: 'shadcn-dark-video',
   },
@@ -247,5 +247,27 @@ export default {
       resolution: '1920x1080',
       transitionMs: 500,
     },
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONFIGURACIÓN DE IA (GitHub Models)
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  ai: {
+    /** 
+     * Modelo a usar vía GitHub Models API.
+     * Requiere GITHUB_TOKEN (Personal Access Token).
+     * Costo: $0 (incluido en suscripción GitHub Copilot).
+     * 
+     * Opciones:
+     *   - 'claude-sonnet-4-20250514'      (default) Mejor calidad/velocidad
+     *   - 'claude-opus-4-20250514'        Máxima calidad
+     *   - 'claude-3-5-sonnet-20241022'    Alternativa estable
+     *   - 'gpt-4o'                        Alternativa GPT
+     */
+    model: 'claude-sonnet-4-20250514',
+
+    /** Tokens máximos de salida por documento */
+    maxTokens: 8192,
   },
 };

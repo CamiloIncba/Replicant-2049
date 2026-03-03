@@ -257,7 +257,7 @@ Crear componentes para estados especiales:
 
 ---
 
-*Prompts para Lovable.dev — Tutorializator-2049 — INCBA*
+*Prompts para Lovable.dev — Replicant-2049 — INCBA*
 ```
 
 ---
@@ -293,4 +293,4 @@ Antes de marcar como completo:
 
 ---
 
-*Skill para Tutorializator-2049 — INCBA*
+*Skill para Replicant-2049 — INCBA*

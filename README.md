@@ -1,32 +1,97 @@
-# Tutorializator 2049
+# REPLICANT 2049
 
-> Sistema de documentación para proyectos INCBA. Genera SRS, planes de trabajo, tutoriales y exporta a PDF, DOCX y MP4.
+> Sistema de documentación inteligente para proyectos INCBA. Analiza código fuente, genera documentos con GitHub Models (SRS, PLAN, README, etc.) y exporta a PDF, DOCX y MP4.
 
 ---
 
-## ✨ Features
+## ✅ Funcionalidades Implementadas
 
-### 📁 Project Documentation
-- **`init`** — Scaffolding de documentación para nuevos proyectos
-- **`sync`** — Tracking de progreso y estado de documentación
-- **Skills templates** — SRS, PLAN, CLAUDE, README, LOVABLE-PROMPT, ERASER-DSL
+### 📁 Comandos CLI
 
-### 📄 Export Capabilities
-- 📄 **Markdown → PDF** con portada profesional
-- 📝 **Markdown → DOCX** compatible con Word
-- 🎥 **Markdown → MP4** video con slides animados
-- 🖼️ **Imágenes embebidas** como base64
-- 📑 **Índice auto-generado** desde H2/H3
-- 🎨 **Temas intercambiables** (`shadcn-dark`, `presupuesto-norpan`)
+| Comando | Descripción | Estado |
+|---------|-------------|--------|
+| `replicant init` | Scaffolding de documentación para nuevos proyectos | ✅ Completo |
+| `replicant sync` | Verificación de estado y progreso de documentación | ✅ Completo |
+| `replicant generate` | Generación automática de documentos con GitHub Models | ✅ Completo |
+| `replicant export` | Exportar Markdown a PDF, DOCX, HTML, MP4 | ✅ Completo |
+| `replicant audit` | Auditoría de estándares del proyecto (21 checks) | ✅ Completo |
+
+### 🤖 Generación con IA (GitHub Models)
+- ✅ Análisis automático de backend y frontend (controllers, models, componentes)
+- ✅ Generación de documentos finales basados en código real
+- ✅ Soporte batch: múltiples proyectos en una ejecución
+- ✅ $0 costo adicional (incluido en suscripción GitHub Copilot)
+- ✅ Modelo configurable vía `--model` (OpenAI GPT-4.1-mini default)
+
+### 📄 Exportación PDF (`--pdf`)
+- ✅ Markdown → PDF con Playwright headless Chromium
+- ✅ Portada profesional (2 modos: shadcn-dark card, imagen background)
+- ✅ Imágenes embebidas como base64
+- ✅ Índice auto-generado desde H2/H3
+- ✅ Temas intercambiables (`shadcn-dark`, `presupuesto-norpan`)
+- ✅ Headers/footers con número de página
+- ✅ Formato A4 / Letter configurable
+
+### 🌐 Exportación HTML (`--html`)
+- ✅ Markdown → HTML fragment para embedding in-app
+- ✅ Imágenes como rutas relativas (no base64, con lazy loading)
+- ✅ Generación de TOC JSON (scroll-spy ready)
+- ✅ Metadata JSON (título, versión, fecha, contadores)
+- ✅ Copia automática de imágenes al directorio destino
+
+### 📝 Exportación DOCX (`--docx`)
+- ✅ Markdown → DOCX con headings, párrafos, tablas, listas, código
+- ✅ Table of Contents auto-generada
+- ✅ Estilos de texto (bold, italic, code inline)
+
+### 🎥 Exportación Video (`--video`)
+- ✅ Markdown → slides HTML renderizados con Playwright
+- ✅ Slides estáticos convertidos a clips MP4 vía FFmpeg
+- ✅ Concatenación de clips en video final
+- ✅ Cursor visual overlay para grabaciones
+
+### 📸 Pipeline de Capturas
+- ✅ Integración con script de capturas (Playwright)
+- ✅ Validación de app corriendo antes de capturar
+- ✅ Flag `--skip-capture` para usar imágenes existentes
+- ✅ Configuración via `capture.script` en tutorial.config.js
+
+### 📋 Auditoría de Estándares (`audit`)
+- ✅ 21 estándares obligatorios en 4 categorías (DOC, UX, FEAT, QA)
+- ✅ Auto-detección de estructura proyecto (backend/frontend/more)
+- ✅ Reporte con colores y progress bar (✅/⚠️/❌)
+- ✅ Modo `--json` para uso programático
+- ✅ Modo `--verbose` para detalles de estándares que pasan
+- ✅ Exit code 1 en failures (compatible CI)
+
+### 📁 Skills Templates
+- ✅ SRS (IEEE 830), PLAN, CLAUDE, README, LOVABLE-PROMPT, ERASER-DSL
+- ✅ TUTORIAL_GUIDE con guía de estructura
+- ✅ STANDARDS.md con 21 estándares verificables
+
+---
+
+## 🚧 Funcionalidades Pendientes
+
+| Prioridad | Feature | Detalle |
+|-----------|---------|---------|
+| **P1** | DOCX — Imágenes embebidas | Las imágenes del Markdown se ignoran silenciosamente en el DOCX. Falta implementar `ImageRun` del paquete `docx`. |
+| **P2** | DOCX — Portada generada | La portada es una página en blanco (`new Paragraph({ children: [] })`). No renderiza título, logo, subtítulo ni clasificación del config. |
+| **P3** | Video — Transiciones | Los clips se concatenan con hard-cut (`-c copy`). Faltan filtros FFmpeg `xfade` para crossfade y fade-black. |
+| **P4** | Video — Música de fondo | `config.video.backgroundMusic` se resuelve en el CLI pero nunca se usa en export-video.mjs. Falta `-i` + filtro de audio overlay. |
+| **P5** | Video — Animaciones de slides | Los slides se capturan como screenshots estáticos. Falta renderizado por fases (text reveal, opacity transitions). |
+| **P6** | sync `--update-progress` | El flag se parsea pero no tiene lógica. Debería reescribir las tablas de progreso en CLAUDE.md automáticamente. |
+| **P7** | Modelos Anthropic directo | Solo funciona vía GitHub Models API proxy. No hay soporte para `ANTHROPIC_API_KEY` directo. El default real es `openai/gpt-4.1-mini`, no Sonnet 4 como dice la ayuda. |
+| **P8** | Eliminar dep `fluent-ffmpeg` | Está en `dependencies` pero nunca se importa. export-video.mjs usa `child_process.spawn` + `ffmpeg-static` directamente. |
 
 ## 📦 Instalación
 
 ```bash
 # Global
-npm install -g tutorializator-2049
+npm install -g replicant-2049
 
 # O como dev dependency
-npm install -D tutorializator-2049
+npm install -D replicant-2049
 
 # Instalar navegadores de Playwright (primera vez)
 npx playwright install chromium
@@ -38,10 +103,10 @@ npx playwright install chromium
 
 ```bash
 # Interactivo
-npx tutorializator init
+npx replicant init
 
 # Con parámetros
-npx tutorializator init --project TC --client NOR-PAN
+npx replicant init --project TC --client NOR-PAN
 ```
 
 Esto crea:
@@ -63,26 +128,93 @@ project.config.js       ← Configuración del proyecto
 
 ```bash
 # Verificar estado
-npx tutorializator sync
+npx replicant sync
 
 # Solo check (sin modificar)
-npx tutorializator sync --check
+npx replicant sync --check
 ```
+
+### Generar documentos con IA (GitHub Models)
+
+Requiere `GITHUB_TOKEN` (Personal Access Token):
+
+```bash
+# Crear token en: https://github.com/settings/tokens
+# Windows PowerShell:
+$env:GITHUB_TOKEN = "ghp_..."
+# Linux/Mac:
+export GITHUB_TOKEN="ghp_..."
+```
+
+```bash
+# Un proyecto específico
+npx replicant generate --project APP-PAGOS-PENDIENTES
+
+# Todos los proyectos de una carpeta
+npx replicant generate --all --dir "C:\Proyectos\NOR-PAN"
+
+# Solo ciertos documentos
+npx replicant generate --project TC --docs SRS,PLAN
+
+# Dry-run (analiza sin llamar a la API)
+npx replicant generate --project TC --dry-run
+
+# Usar Opus 4 (máxima calidad)
+npx replicant generate --project TC --model claude-opus-4-20250514
+
+# Usar GPT-4o
+npx replicant generate --project TC --model gpt-4o
+
+# Sobreescribir documentos existentes
+npx replicant generate --project TC --force
+```
+
+Output al finalizar:
+```
+═══════════════════════════════════════════════════════════
+ REPLICANT 2049 — Generación Completada
+═══════════════════════════════════════════════════════════
+
+ Proyectos procesados: 2
+ ├── APP-PAGOS-PENDIENTES      ✓ 6 documentos
+ └── TC                        ✓ 6 documentos
+
+ Documentos generados: 12 total
+
+═══════════════════════════════════════════════════════════
+ CONSUMO
+═══════════════════════════════════════════════════════════
+ Input tokens:    104,280
+ Output tokens:    21,460
+ Modelo:          Claude Sonnet 4
+ Tiempo:          85.3s
+ Costo:           $0.00 (incluido en suscripción GitHub Copilot)
+═══════════════════════════════════════════════════════════
+```
+
+#### Modelos disponibles
+
+| Modelo | Proveedor | Uso recomendado |
+|--------|-----------|-----------------|
+| `claude-sonnet-4-20250514` | Anthropic | **Default** — Mejor calidad/velocidad |
+| `claude-opus-4-20250514` | Anthropic | Máxima calidad |
+| `claude-3-5-sonnet-20241022` | Anthropic | Alternativa estable |
+| `gpt-4o` | OpenAI | Alternativa GPT |
 
 ### Exportar documentos
 
 ```bash
 # PDF (default)
-npx tutorializator export --config ./tutorial.config.js
+npx replicant export --config ./tutorial.config.js
 
 # DOCX
-npx tutorializator export --config ./tutorial.config.js --docx
+npx replicant export --config ./tutorial.config.js --docx
 
 # Video MP4
-npx tutorializator export --config ./tutorial.config.js --video
+npx replicant export --config ./tutorial.config.js --video
 
 # Todos los formatos
-npx tutorializator export --pdf --docx --video
+npx replicant export --pdf --docx --video
 ```
 
 ## 📁 Estructura de Proyecto INCBA
@@ -93,13 +225,13 @@ C:/Proyectos/
     └── PROYECTO/               # Nombre del proyecto
         ├── PROYECTO-backend/   # Backend (NestJS/Express)
         ├── PROYECTO-frontend/  # Frontend (React + Vite)
-        ├── PROYECTO-more/      # Documentación ← Tutorializator
+        ├── PROYECTO-more/      # Documentación ← Replicant
         │   ├── CLAUDE.md
         │   ├── SRS.md
         │   ├── PLAN.md
         │   ├── TUTORIAL.md
         │   └── SS/
-        └── project.config.js   # Config de Tutorializator
+        └── project.config.js   # Config de Replicant
 ```
 
 ## 📋 Skills Templates
@@ -214,9 +346,9 @@ export default CSS;
 ## 📖 Uso como Módulo
 
 ```javascript
-import { exportTutorialToPDF } from 'tutorializator-2049';
-import { exportTutorialToVideo } from 'tutorializator-2049/video';
-import { exportToDocx } from 'tutorializator-2049/docx';
+import { exportTutorialToPDF } from 'replicant-2049';
+import { exportTutorialToVideo } from 'replicant-2049/video';
+import { exportToDocx } from 'replicant-2049/docx';
 
 await exportTutorialToPDF(config);
 await exportTutorialToVideo(config);
@@ -228,7 +360,7 @@ await exportToDocx(config);
 El comando `sync` lee `CLAUDE.md` y detecta el progreso de los RFs:
 
 ```bash
-npx tutorializator sync
+npx replicant sync
 ```
 
 Output:
