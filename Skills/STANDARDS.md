@@ -245,6 +245,72 @@ Cada estándar tiene:
 
 ---
 
+## ARCH — Arquitectura
+
+> Estándares de arquitectura del stack NOR-PAN. Referencia detallada en `Skills/arch/`.
+
+### ARCH-01 · Auth0 Autentica, BD Autoriza
+**Descripción:** Auth0 se usa exclusivamente para autenticación (identidad). Los roles y permisos se almacenan y consultan desde MongoDB, nunca desde claims del JWT.  
+**Verificación:**
+- `middleware/roles.ts` existe y contiene `resolveUser()` que consulta MongoDB
+- NO hay lectura de roles desde `req.auth` o claims del token
+- El modelo `User` tiene campo `role` en la base de datos
+
+**Justificación:** Desacopla la lógica de autorización del proveedor de identidad. Permite cambiar roles sin re-emitir tokens. Ver `Skills/arch/AUTH.md`.
+
+### ARCH-02 · Endpoint GET /users/me
+**Descripción:** El backend expone `GET /users/me` que retorna el usuario actual con su rol resuelto desde la BD. Si el usuario no existe, lo crea automáticamente (first-login provisioning).  
+**Verificación:**
+- Existe `routes/user.routes.ts` con endpoint `GET /me`
+- El endpoint usa middleware `checkJwt` + `resolveUser`
+- Retorna `{ auth0Id, email, name, role }` desde MongoDB
+
+**Justificación:** Centraliza la resolución de identidad+rol en un único punto. El frontend no necesita saber cómo se resuelven los roles.
+
+### ARCH-03 · Roles desde MongoDB (Frontend)
+**Descripción:** El frontend obtiene el rol del usuario llamando a `GET /users/me`, nunca leyendo claims del JWT.  
+**Verificación:**
+- `hooks/use-current-user.ts` usa `useQuery` para llamar a la API
+- NO hay lectura de `user['roles']` ni `user['https://...']` desde el token Auth0
+- `RoleGuard` consume el hook `useCurrentUser`, no el token
+
+**Justificación:** Consistencia con el principio "Auth0 autentica, la BD autoriza". El frontend siempre refleja el estado real de la BD.
+
+### ARCH-04 · SKIP_AUTH Dev Mode
+**Descripción:** Backend y frontend soportan `SKIP_AUTH=true` para desarrollo local sin Auth0.  
+**Verificación:**
+- Backend: `middleware/auth.ts` tiene bypass condicional cuando `SKIP_AUTH=true`
+- Frontend: `Auth0Provider` tiene `MockAuth0Provider` alternativo
+- Frontend: `use-current-user.ts` retorna mock user cuando SKIP_AUTH activo
+- `.env.example` documenta la variable `SKIP_AUTH`
+
+**Justificación:** Permite desarrollo sin dependencia de Auth0. Reduce fricción al onboardear devs. Ver `Skills/arch/SECURITY.md`.
+
+### ARCH-05 · Estructura Backend Estándar
+**Descripción:** El backend sigue la estructura Express + TypeScript + Mongoose definida en el estándar.  
+**Verificación:**
+- Directorio `src/config/` con `env.ts` y `database.ts`
+- Directorio `src/middleware/` con `auth.ts`, `roles.ts`, `errorHandler.ts`, `validate.ts`
+- Directorio `src/models/` con al menos `user.model.ts`
+- Directorio `src/routes/` con `index.ts` que registra todas las rutas
+- `app.ts` en raíz de `src/` como entry point
+
+**Justificación:** Estructura predecible reduce tiempo de onboarding. Ver `Skills/arch/BACKEND.md`.
+
+### ARCH-06 · Estructura Frontend Estándar
+**Descripción:** El frontend sigue la estructura React + Vite + shadcn/ui definida en el estándar.  
+**Verificación:**
+- Directorio `src/components/` con subdirectorios `auth/`, `layout/`, `ui/`
+- Directorio `src/hooks/` con `use-api.ts` y `use-current-user.ts`
+- Directorio `src/providers/` con `Auth0Provider.tsx`
+- Directorio `src/pages/` con al menos `Dashboard.tsx`, `Login.tsx`
+- Configuración de 3 temas (light, dark, dusk) en `index.css`
+- `tailwind.config.ts` con sistema de colores HSL
+
+**Justificación:** Estructura predecible reduce tiempo de onboarding. Ver `Skills/arch/FRONTEND.md`.
+
+---
+
 ## Resumen de Estándares
 
 | Código | Nombre | Categoría |
@@ -266,9 +332,15 @@ Cada estándar tiene:
 | FEAT-03 | Push Notifications | Feature |
 | FEAT-04 | PWA Ready | Feature |
 | FEAT-05 | Exportar Reportes | Feature |
+| ARCH-01 | Auth0 Autentica, BD Autoriza | Arquitectura |
+| ARCH-02 | Endpoint GET /users/me | Arquitectura |
+| ARCH-03 | Roles desde MongoDB | Arquitectura |
+| ARCH-04 | SKIP_AUTH Dev Mode | Arquitectura |
+| ARCH-05 | Estructura Backend Estándar | Arquitectura |
+| ARCH-06 | Estructura Frontend Estándar | Arquitectura |
 | QA-01 | Pre-commit Hooks | Quality |
 | QA-02 | Tests E2E | Quality |
 | QA-03 | Linting | Quality |
 | QA-04 | TypeScript Estricto | Quality |
 
-**Total: 21 estándares obligatorios**
+**Total: 27 estándares obligatorios**

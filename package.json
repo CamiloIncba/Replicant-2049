@@ -1,7 +1,7 @@
 {
   "name": "replicant-2049",
-  "version": "2.2.0",
-  "description": "Replicant 2049 - AI-powered project documentation generator. Analyze code, generate SRS/PLAN/README via GitHub Models. Export to PDF, DOCX, MP4.",
+  "version": "2.3.0",
+  "description": "Replicant 2049 - AI-powered project documentation generator & full-stack scaffolding. Generate SRS/PLAN/README via GitHub Models, export to PDF/DOCX/MP4, scaffold Express+React projects.",
   "type": "module",
   "bin": {
     "replicant": "./src/cli.mjs",
@@ -31,6 +31,8 @@
     "markdown",
     "generator",
     "documentation",
+    "scaffolding",
+    "boilerplate",
     "screenshots",
     "playwright",
     "ffmpeg",

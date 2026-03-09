@@ -14,7 +14,7 @@
 | `replicant sync` | Verificación de estado y progreso de documentación | ✅ Completo |
 | `replicant generate` | Generación automática de documentos con GitHub Models | ✅ Completo |
 | `replicant export` | Exportar Markdown a PDF, DOCX, HTML, MP4 | ✅ Completo |
-| `replicant audit` | Auditoría de estándares del proyecto (21 checks) | ✅ Completo |
+| `replicant audit` | Auditoría de estándares del proyecto (27 checks) | ✅ Completo |
 
 ### 🤖 Generación con IA (GitHub Models)
 - ✅ Análisis automático de backend y frontend (controllers, models, componentes)
@@ -57,7 +57,7 @@
 - ✅ Configuración via `capture.script` en tutorial.config.js
 
 ### 📋 Auditoría de Estándares (`audit`)
-- ✅ 21 estándares obligatorios en 4 categorías (DOC, UX, FEAT, QA)
+- ✅ 27 estándares obligatorios en 5 categorías (DOC, UX, FEAT, ARCH, QA)
 - ✅ Auto-detección de estructura proyecto (backend/frontend/more)
 - ✅ Reporte con colores y progress bar (✅/⚠️/❌)
 - ✅ Modo `--json` para uso programático
@@ -67,7 +67,16 @@
 ### 📁 Skills Templates
 - ✅ SRS (IEEE 830), PLAN, CLAUDE, README, LOVABLE-PROMPT, ERASER-DSL
 - ✅ TUTORIAL_GUIDE con guía de estructura
-- ✅ STANDARDS.md con 21 estándares verificables
+- ✅ STANDARDS.md con 27 estándares verificables
+- ✅ Estándares de arquitectura (`Skills/arch/AUTH.md`, `BACKEND.md`, `FRONTEND.md`, `SECURITY.md`)
+
+### 🏗️ Scaffolding Full-Stack (`init --full`)
+- ✅ Backend Express 5 + TypeScript + Mongoose (boilerplate listo)
+- ✅ Frontend React + Vite + shadcn/ui + Auth0 (boilerplate listo)
+- ✅ Patrón de autorización NOR-PAN: "Auth0 autentica, la BD autoriza"
+- ✅ SKIP_AUTH para desarrollo local sin Auth0
+- ✅ 3 temas (light, dark, dusk) con CSS variables
+- ✅ Variables de template (`{{PROYECTO}}`, `{{CLIENTE}}`, etc.) reemplazadas automáticamente
 
 ---
 
@@ -102,7 +111,7 @@ npx playwright install chromium
 ### Inicializar nuevo proyecto
 
 ```bash
-# Interactivo
+# Interactivo (solo documentación)
 npx replicant init
 
 # Con parámetros
@@ -123,6 +132,77 @@ TC-more/
 
 project.config.js       ← Configuración del proyecto
 ```
+
+### Scaffolding completo (`--full`)
+
+Genera documentación **+ backend + frontend** listos para desarrollar:
+
+```bash
+# Full stack con defaults
+npx replicant init --project TC --client NOR-PAN --full
+
+# Solo backend
+npx replicant init --project TC --client NOR-PAN --backend
+
+# Solo frontend
+npx replicant init --project TC --client NOR-PAN --frontend
+
+# Con puertos y BD personalizados
+npx replicant init --project TC --client NOR-PAN --full \
+  --port-backend 3002 --port-frontend 5175 --db-name tc_prod
+```
+
+Esto crea la estructura completa:
+```
+TC-backend/
+├── src/
+│   ├── app.ts                  ← Entry point Express
+│   ├── config/                 ← env.ts, database.ts
+│   ├── middleware/             ← auth, roles, validation, errors
+│   ├── models/                 ← user.model.ts
+│   └── routes/                 ← health, users (GET /me)
+├── .env                        ← Generado desde .env.example
+├── package.json
+└── tsconfig.json
+
+TC-frontend/
+├── src/
+│   ├── components/
+│   │   ├── auth/               ← ProtectedRoute, RoleGuard, UserMenu
+│   │   ├── layout/             ← AppLayout, Sidebar, Header
+│   │   └── ui/                 ← shadcn components
+│   ├── hooks/                  ← use-api, use-current-user
+│   ├── pages/                  ← Dashboard, Login, AuthCallback
+│   ├── providers/              ← Auth0Provider
+│   ├── config/                 ← auth0.config, skip-auth
+│   └── App.tsx
+├── .env                        ← Generado desde .env.example
+├── package.json
+└── vite.config.ts
+
+TC-more/                        ← Documentación (siempre se crea)
+```
+
+#### Opciones de `--full`
+
+| Flag | Default | Descripción |
+|------|---------|-------------|
+| `--full` | — | Scaffolding backend + frontend + docs |
+| `--backend` | — | Solo backend + docs |
+| `--frontend` | — | Solo frontend + docs |
+| `--port-backend` | `3001` | Puerto del backend Express |
+| `--port-frontend` | `5174` | Puerto del frontend Vite |
+| `--db-name` | `{proyecto}_db` | Nombre de la base de datos MongoDB |
+
+#### Estándares incluidos
+
+Los boilerplates implementan los estándares de arquitectura NOR-PAN:
+
+- **Auth0 autentica, la BD autoriza** — Roles en MongoDB, no en JWT claims
+- **GET /users/me** — Auto-provisioning en primer login
+- **SKIP_AUTH** — Desarrollo local sin Auth0
+- **3 temas** — Light, Dark, Dusk con CSS variables
+- **27 estándares verificables** — `replicant audit` valida cumplimiento
 
 ### Verificar documentación
 
@@ -246,6 +326,11 @@ Los templates en `Skills/` guían la generación de documentos:
 | `LOVABLE_PROMPT_TEMPLATE.md` | Prompts para mockups en lovable.dev |
 | `ERASER_DSL_TEMPLATE.md` | DSL para diagramas en eraser.io |
 | `README_TEMPLATE.md` | README técnico para repos |
+| `STANDARDS.md` | 27 estándares verificables (DOC, UX, FEAT, ARCH, QA) |
+| `arch/AUTH.md` | Estándar de autenticación/autorización NOR-PAN |
+| `arch/BACKEND.md` | Estándar de arquitectura backend |
+| `arch/FRONTEND.md` | Estándar de arquitectura frontend |
+| `arch/SECURITY.md` | Estándar de seguridad por capas |
 
 ## ⚙️ Project Config
 

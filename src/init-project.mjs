@@ -15,14 +15,15 @@
  * ============================================================
  */
 
-import { resolve, dirname, join } from 'path';
-import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
+import { resolve, dirname, join, relative } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, readdirSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 import readline from 'readline';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const SKILLS_DIR = resolve(__dirname, '..', 'Skills');
+const BOILERPLATES_DIR = resolve(__dirname, '..', 'Boilerplates');
 
 // ─── ANSI Colors ───────────────────────────────────────────────
 const colors = {
@@ -53,6 +54,12 @@ function parseArgs() {
   let devName = null;
   let targetDir = process.cwd();
   let nonInteractive = false;
+  let fullMode = false;
+  let backendOnly = false;
+  let frontendOnly = false;
+  let portBackend = '3001';
+  let portFrontend = '5173';
+  let dbName = null;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--project' && args[i + 1]) {
@@ -79,6 +86,21 @@ function parseArgs() {
     } else if (args[i] === '--target' && args[i + 1]) {
       targetDir = resolve(args[i + 1]);
       i++;
+    } else if (args[i] === '--full') {
+      fullMode = true;
+    } else if (args[i] === '--backend') {
+      backendOnly = true;
+    } else if (args[i] === '--frontend') {
+      frontendOnly = true;
+    } else if (args[i] === '--port-backend' && args[i + 1]) {
+      portBackend = args[i + 1];
+      i++;
+    } else if (args[i] === '--port-frontend' && args[i + 1]) {
+      portFrontend = args[i + 1];
+      i++;
+    } else if (args[i] === '--db-name' && args[i + 1]) {
+      dbName = args[i + 1];
+      i++;
     } else if (args[i] === '-y' || args[i] === '--yes') {
       nonInteractive = true;
     } else if (args[i] === '--help' || args[i] === '-h') {
@@ -89,7 +111,8 @@ function parseArgs() {
 
   return { 
     projectName, projectFullName, clientFolder, clientFullName, 
-    description, pmName, devName, targetDir, nonInteractive 
+    description, pmName, devName, targetDir, nonInteractive,
+    fullMode, backendOnly, frontendOnly, portBackend, portFrontend, dbName
   };
 }
 
@@ -101,20 +124,28 @@ ${colors.cyan}Usage:${colors.reset}
   npx replicant init [options]
 
 ${colors.cyan}Options:${colors.reset}
-  --project NAME      Project code (e.g., TC, APP-PAGOS)
-  --name FULLNAME     Project full name
-  --client FOLDER     Client folder name (e.g., NOR-PAN, INCBA)
-  --client-name NAME  Client full name
-  --description DESC  Short description
-  --pm NAME           Project Manager name
-  --dev NAME          Developer name
-  --target DIR        Target directory (default: current dir)
-  -y, --yes           Non-interactive mode (use defaults)
-  --help, -h          Show this help
+  --project NAME        Project code (e.g., TC, APP-PAGOS)
+  --name FULLNAME       Project full name
+  --client FOLDER       Client folder name (e.g., NOR-PAN, INCBA)
+  --client-name NAME    Client full name
+  --description DESC    Short description
+  --pm NAME             Project Manager name
+  --dev NAME            Developer name
+  --target DIR          Target directory (default: current dir)
+  --full                Scaffold full project: backend + frontend + docs
+  --backend             Only scaffold backend (with --full)
+  --frontend            Only scaffold frontend (with --full)
+  --port-backend PORT   Backend port (default: 3001)
+  --port-frontend PORT  Frontend port (default: 5173)
+  --db-name NAME        MongoDB database name (default: project code lowercase)
+  -y, --yes             Non-interactive mode (use defaults)
+  --help, -h            Show this help
 
 ${colors.cyan}Examples:${colors.reset}
   npx replicant init --project TC --client NOR-PAN
-  npx replicant init --project TC --client NOR-PAN -y
+  npx replicant init --project TC --client NOR-PAN --full
+  npx replicant init --project TC --client NOR-PAN --full --backend
+  npx replicant init --project TC --client NOR-PAN --full -y
   npx replicant init  # Interactive mode
 `);
 }
@@ -177,6 +208,7 @@ function ensureDir(dirPath) {
 function replaceVariables(content, info) {
   const replacements = {
     '{{PROYECTO}}': info.project.code,
+    '{{PROYECTO_LOWER}}': info.project.code.toLowerCase().replace(/-/g, '-'),
     '{{NOMBRE_COMPLETO}}': info.project.name,
     '{{DESCRIPCION_CORTA}}': info.project.description,
     '{{CLIENTE}}': info.client.name,
@@ -186,6 +218,9 @@ function replaceVariables(content, info) {
     '{{FECHA}}': new Date().toISOString().split('T')[0],
     '{{YEAR}}': new Date().getFullYear().toString(),
     '{{VERSION}}': '1.0.0',
+    '{{PORT_BACKEND}}': info.ports?.backend || '3001',
+    '{{PORT_FRONTEND}}': info.ports?.frontend || '5173',
+    '{{DB_NAME}}': info.dbName || info.project.code.toLowerCase().replace(/-/g, '_'),
   };
 
   let result = content;
@@ -270,12 +305,114 @@ function createProjectConfig(targetDir, info) {
   }
 }
 
+// ─── Boilerplate Scaffolding ───────────────────────────────────
+/**
+ * Recursively copy a boilerplate directory, replacing template variables.
+ * Binary files are copied as-is; text files get variable replacement.
+ */
+function copyBoilerplateDir(srcDir, destDir, info) {
+  ensureDir(destDir);
+  
+  const entries = readdirSync(srcDir);
+  let fileCount = 0;
+  
+  for (const entry of entries) {
+    const srcPath = join(srcDir, entry);
+    const destPath = join(destDir, entry);
+    const stat = statSync(srcPath);
+    
+    if (stat.isDirectory()) {
+      fileCount += copyBoilerplateDir(srcPath, destPath, info);
+    } else {
+      // Check if it's a text file that needs variable replacement
+      const textExtensions = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.json', '.html', '.css', '.md', '.env', '.example', '.gitignore'];
+      const isText = textExtensions.some(ext => entry.endsWith(ext)) || 
+                     entry === '.gitignore' || entry === '.env.example' || entry === 'Procfile';
+      
+      if (isText) {
+        let content = readFileSync(srcPath, 'utf8');
+        content = replaceVariables(content, info);
+        writeFileSync(destPath, content, 'utf8');
+      } else {
+        copyFileSync(srcPath, destPath);
+      }
+      fileCount++;
+    }
+  }
+  
+  return fileCount;
+}
+
+/**
+ * Scaffold full project: backend, frontend, or both from Boilerplates.
+ */
+function scaffoldFullProject(targetDir, info, options) {
+  const { backendOnly, frontendOnly } = options;
+  const projectCode = info.project.code;
+  
+  const doBackend = !frontendOnly;
+  const doFrontend = !backendOnly;
+  
+  if (doBackend) {
+    const backendSrc = join(BOILERPLATES_DIR, 'express-backend');
+    const backendDest = join(targetDir, `${projectCode}-backend`);
+    
+    if (!existsSync(backendSrc)) {
+      log.warn('Backend boilerplate not found at: ' + backendSrc);
+    } else {
+      log.title('🔧 Scaffolding backend...');
+      const count = copyBoilerplateDir(backendSrc, backendDest, info);
+      
+      // Create .env from .env.example
+      const envExample = join(backendDest, '.env.example');
+      const envFile = join(backendDest, '.env');
+      if (existsSync(envExample) && !existsSync(envFile)) {
+        copyFileSync(envExample, envFile);
+        log.success(`Created: .env (from .env.example)`);
+      }
+      
+      log.success(`Backend scaffolded: ${count} files → ${projectCode}-backend/`);
+    }
+  }
+  
+  if (doFrontend) {
+    const frontendSrc = join(BOILERPLATES_DIR, 'react-frontend');
+    const frontendDest = join(targetDir, `${projectCode}-frontend`);
+    
+    if (!existsSync(frontendSrc)) {
+      log.warn('Frontend boilerplate not found at: ' + frontendSrc);
+    } else {
+      log.title('🎨 Scaffolding frontend...');
+      const count = copyBoilerplateDir(frontendSrc, frontendDest, info);
+      
+      // Create .env from .env.example
+      const envExample = join(frontendDest, '.env.example');
+      const envFile = join(frontendDest, '.env');
+      if (existsSync(envExample) && !existsSync(envFile)) {
+        copyFileSync(envExample, envFile);
+        log.success(`Created: .env (from .env.example)`);
+      }
+      
+      log.success(`Frontend scaffolded: ${count} files → ${projectCode}-frontend/`);
+    }
+  }
+  
+  return { doBackend, doFrontend };
+}
+
 // ─── Main ──────────────────────────────────────────────────────
 async function main() {
   const args = parseArgs();
   
   // Gather project info (interactive if not provided)
   const info = await gatherProjectInfo(args);
+  
+  // Attach ports and dbName to info for variable replacement
+  info.ports = {
+    backend: args.portBackend,
+    frontend: args.portFrontend,
+  };
+  info.dbName = args.dbName || info.project.code.toLowerCase().replace(/-/g, '_');
   
   const targetDir = args.targetDir;
   const projectCode = info.project.code;
@@ -320,9 +457,19 @@ async function main() {
     log.success(`Created: ${tutorialPath}`);
   }
 
+  // ─── Full Mode: scaffold backend + frontend ─────────────────
+  let scaffoldResult = null;
+  if (args.fullMode) {
+    scaffoldResult = scaffoldFullProject(targetDir, info, {
+      backendOnly: args.backendOnly,
+      frontendOnly: args.frontendOnly,
+    });
+  }
+
   // Summary
   log.title('✅ Project initialized successfully!');
-  console.log(`
+  
+  let structureTree = `
 ${colors.cyan}Created structure:${colors.reset}
   ${projectCode}-more/
   ├── CLAUDE.md        ${colors.green}← Hub central${colors.reset}
@@ -334,14 +481,69 @@ ${colors.cyan}Created structure:${colors.reset}
   ├── SS/              ${colors.cyan}← Screenshots aquí${colors.reset}
   └── diagrams/        ${colors.cyan}← Diagramas PNG aquí${colors.reset}
   
-  project.config.js    ${colors.green}← Configuración del proyecto${colors.reset}
+  project.config.js    ${colors.green}← Configuración del proyecto${colors.reset}`;
 
+  if (scaffoldResult) {
+    if (scaffoldResult.doBackend) {
+      structureTree += `
+
+  ${projectCode}-backend/
+  ├── src/
+  │   ├── app.ts           ${colors.green}← Express server${colors.reset}
+  │   ├── config/          ${colors.cyan}← env, database${colors.reset}
+  │   ├── middleware/       ${colors.cyan}← auth, roles, validate, errorHandler${colors.reset}
+  │   ├── models/           ${colors.cyan}← User model${colors.reset}
+  │   └── routes/           ${colors.cyan}← health, users/me${colors.reset}
+  ├── package.json
+  ├── tsconfig.json
+  ├── .env               ${colors.green}← Variables de entorno (local)${colors.reset}
+  └── .env.example`;
+    }
+    if (scaffoldResult.doFrontend) {
+      structureTree += `
+
+  ${projectCode}-frontend/
+  ├── src/
+  │   ├── App.tsx          ${colors.green}← Root component${colors.reset}
+  │   ├── config/          ${colors.cyan}← Auth0, skip-auth${colors.reset}
+  │   ├── hooks/           ${colors.cyan}← useApi, useCurrentUser${colors.reset}
+  │   ├── components/      ${colors.cyan}← auth, layout, ErrorBoundary${colors.reset}
+  │   ├── pages/           ${colors.cyan}← Dashboard, Login, NotFound${colors.reset}
+  │   └── providers/       ${colors.cyan}← Auth0Provider${colors.reset}
+  ├── package.json
+  ├── vite.config.ts
+  ├── tailwind.config.ts
+  ├── components.json      ${colors.green}← shadcn/ui config${colors.reset}
+  ├── .env               ${colors.green}← Variables de entorno (local)${colors.reset}
+  └── .env.example`;
+    }
+  }
+
+  console.log(structureTree);
+
+  // Next steps
+  let nextSteps = `
 ${colors.cyan}Next steps:${colors.reset}
   1. Review and complete ${colors.bright}SRS.md${colors.reset} with your requirements
   2. Review and complete ${colors.bright}PLAN.md${colors.reset} with your timeline
   3. Use ${colors.bright}CLAUDE.md${colors.reset} as context hub during development
-  4. Run ${colors.bright}npx replicant sync${colors.reset} to track progress
-`);
+  4. Run ${colors.bright}npx replicant sync${colors.reset} to track progress`;
+
+  if (scaffoldResult) {
+    if (scaffoldResult.doBackend) {
+      nextSteps += `
+  5. ${colors.bright}cd ${projectCode}-backend${colors.reset} && npm install && npm run dev`;
+    }
+    if (scaffoldResult.doFrontend) {
+      nextSteps += `
+  ${scaffoldResult.doBackend ? '6' : '5'}. ${colors.bright}cd ${projectCode}-frontend${colors.reset} && npm install && npx shadcn@latest add button sonner tooltip && npm run dev`;
+    }
+    nextSteps += `
+  ${scaffoldResult.doBackend && scaffoldResult.doFrontend ? '7' : '6'}. Configure Auth0: update ${colors.bright}.env${colors.reset} files with your tenant credentials`;
+  }
+
+  console.log(nextSteps);
+  console.log('');
 }
 
 main().catch(console.error);
