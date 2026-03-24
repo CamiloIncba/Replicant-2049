@@ -1,17 +1,15 @@
 {
   "name": "replicant-2049",
   "version": "2.3.0",
-  "description": "Replicant 2049 - AI-powered project documentation generator & full-stack scaffolding. Generate SRS/PLAN/README via GitHub Models, export to PDF/DOCX/MP4, scaffold Express+React projects.",
+  "description": "Replicant 2049 - AI-powered project documentation generator & full-stack scaffolding. Generate SRS/PLAN/README via GitHub Models, export to HTML/MP4, scaffold Express+React projects.",
   "type": "module",
   "bin": {
-    "replicant": "./src/cli.mjs",
-    "replicant-pdf": "./src/cli.mjs"
+    "replicant": "./src/cli.mjs"
   },
-  "main": "./src/export-pdf.mjs",
+  "main": "./src/export-html.mjs",
   "exports": {
-    ".": "./src/export-pdf.mjs",
+    ".": "./src/export-html.mjs",
     "./video": "./src/export-video.mjs",
-    "./docx": "./src/export-docx.mjs",
     "./themes/*": "./src/themes/*"
   },
   "scripts": {
@@ -21,12 +19,12 @@
     "generate:all": "node src/generate-docs.mjs --all",
     "export": "node src/cli.mjs export",
     "export:video": "node src/cli.mjs export --video",
-    "export:all": "node src/cli.mjs export --pdf --video --docx",
+    "export:all": "node src/cli.mjs export --html --video",
     "example": "node src/cli.mjs export --config example/tutorial.config.js"
   },
   "keywords": [
     "tutorial",
-    "pdf",
+    "html",
     "video",
     "markdown",
     "generator",
@@ -46,9 +44,7 @@
     "url": "https://github.com/CamiloIncba/replicant-2049.git"
   },
   "dependencies": {
-    "docx": "^9.5.3",
     "ffmpeg-static": "^5.2.0",
-    "fluent-ffmpeg": "^2.1.3",
     "marked": "^17.0.0",
     "playwright": "^1.58.0"
   },

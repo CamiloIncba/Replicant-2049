@@ -13,7 +13,7 @@
 | `replicant init` | Scaffolding de documentación para nuevos proyectos | ✅ Completo |
 | `replicant sync` | Verificación de estado y progreso de documentación | ✅ Completo |
 | `replicant generate` | Generación automática de documentos con GitHub Models | ✅ Completo |
-| `replicant export` | Exportar Markdown a PDF, DOCX, HTML, MP4 | ✅ Completo |
+| `replicant export` | Exportar Markdown a HTML, MP4 | ✅ Completo |
 | `replicant audit` | Auditoría de estándares del proyecto (27 checks) | ✅ Completo |
 
 ### 🤖 Generación con IA (GitHub Models)
@@ -23,26 +23,12 @@
 - ✅ $0 costo adicional (incluido en suscripción GitHub Copilot)
 - ✅ Modelo configurable vía `--model` (OpenAI GPT-4.1-mini default)
 
-### 📄 Exportación PDF (`--pdf`)
-- ✅ Markdown → PDF con Playwright headless Chromium
-- ✅ Portada profesional (2 modos: shadcn-dark card, imagen background)
-- ✅ Imágenes embebidas como base64
-- ✅ Índice auto-generado desde H2/H3
-- ✅ Temas intercambiables (`shadcn-dark`, `presupuesto-norpan`)
-- ✅ Headers/footers con número de página
-- ✅ Formato A4 / Letter configurable
-
 ### 🌐 Exportación HTML (`--html`)
 - ✅ Markdown → HTML fragment para embedding in-app
 - ✅ Imágenes como rutas relativas (no base64, con lazy loading)
 - ✅ Generación de TOC JSON (scroll-spy ready)
 - ✅ Metadata JSON (título, versión, fecha, contadores)
 - ✅ Copia automática de imágenes al directorio destino
-
-### 📝 Exportación DOCX (`--docx`)
-- ✅ Markdown → DOCX con headings, párrafos, tablas, listas, código
-- ✅ Table of Contents auto-generada
-- ✅ Estilos de texto (bold, italic, code inline)
 
 ### 🎥 Exportación Video (`--video`)
 - ✅ Markdown → slides HTML renderizados con Playwright
@@ -86,14 +72,12 @@
 
 | Prioridad | Feature | Detalle |
 |-----------|---------|---------|
-| **P1** | DOCX — Imágenes embebidas | Las imágenes del Markdown se ignoran silenciosamente en el DOCX. Falta implementar `ImageRun` del paquete `docx`. |
-| **P2** | DOCX — Portada generada | La portada es una página en blanco (`new Paragraph({ children: [] })`). No renderiza título, logo, subtítulo ni clasificación del config. |
-| **P3** | Video — Transiciones | Los clips se concatenan con hard-cut (`-c copy`). Faltan filtros FFmpeg `xfade` para crossfade y fade-black. |
-| **P4** | Video — Música de fondo | `config.video.backgroundMusic` se resuelve en el CLI pero nunca se usa en export-video.mjs. Falta `-i` + filtro de audio overlay. |
-| **P5** | Video — Animaciones de slides | Los slides se capturan como screenshots estáticos. Falta renderizado por fases (text reveal, opacity transitions). |
-| **P6** | sync `--update-progress` | El flag se parsea pero no tiene lógica. Debería reescribir las tablas de progreso en CLAUDE.md automáticamente. |
-| **P7** | Modelos Anthropic directo | Solo funciona vía GitHub Models API proxy. No hay soporte para `ANTHROPIC_API_KEY` directo. El default real es `openai/gpt-4.1-mini`, no Sonnet 4 como dice la ayuda. |
-| **P8** | Eliminar dep `fluent-ffmpeg` | Está en `dependencies` pero nunca se importa. export-video.mjs usa `child_process.spawn` + `ffmpeg-static` directamente. |
+| **P1** | Video — Transiciones | Los clips se concatenan con hard-cut (`-c copy`). Faltan filtros FFmpeg `xfade` para crossfade y fade-black. |
+| **P2** | Video — Música de fondo | `config.video.backgroundMusic` se resuelve en el CLI pero nunca se usa en export-video.mjs. Falta `-i` + filtro de audio overlay. |
+| **P3** | Video — Animaciones de slides | Los slides se capturan como screenshots estáticos. Falta renderizado por fases (text reveal, opacity transitions). |
+| **P4** | sync `--update-progress` | El flag se parsea pero no tiene lógica. Debería reescribir las tablas de progreso en CLAUDE.md automáticamente. |
+| **P5** | Modelos Anthropic directo | Solo funciona vía GitHub Models API proxy. No hay soporte para `ANTHROPIC_API_KEY` directo. El default real es `openai/gpt-4.1-mini`, no Sonnet 4 como dice la ayuda. |
+| **P6** | Eliminar dep `fluent-ffmpeg` | Está en `dependencies` pero nunca se importa. export-video.mjs usa `child_process.spawn` + `ffmpeg-static` directamente. |
 
 ## 📦 Instalación
 
@@ -104,7 +88,7 @@ npm install -g replicant-2049
 # O como dev dependency
 npm install -D replicant-2049
 
-# Instalar navegadores de Playwright (primera vez)
+# Instalar navegadores de Playwright (primera vez, solo si usa --video)
 npx playwright install chromium
 ```
 
@@ -347,17 +331,14 @@ Output al finalizar:
 ### Exportar documentos
 
 ```bash
-# PDF (default)
+# HTML (default)
 npx replicant export --config ./tutorial.config.js
-
-# DOCX
-npx replicant export --config ./tutorial.config.js --docx
 
 # Video MP4
 npx replicant export --config ./tutorial.config.js --video
 
 # Todos los formatos
-npx replicant export --pdf --docx --video
+npx replicant export --html --video
 ```
 
 ## 📁 Estructura de Proyecto INCBA
@@ -426,12 +407,12 @@ Ver `project.config.example.js` para todas las opciones disponibles.
 
 ## 📄 Export Config (tutorial.config.js)
 
-Para exportar documentos a PDF/DOCX/Video:
+Para exportar documentos a HTML/Video:
 
 ```javascript
 export default {
   input: './TUTORIAL.md',
-  output: './TUTORIAL.pdf',
+  output: './TUTORIAL.html',
   imagesDir: './SS',
   
   cover: {
@@ -461,24 +442,15 @@ export default {
 | `input` | `string` | Ruta al Markdown |
 | `output` | `string` | Ruta del archivo generado |
 | `imagesDir` | `string` | Carpeta de screenshots |
-| `theme` | `string` | `shadcn-dark` o `presupuesto-norpan` |
-| `format` | `string` | `A4` o `Letter` |
+| `theme` | `string` | Tema para video slides (`shadcn-dark`) |
 
 ## 🎨 Temas
 
 ### Built-in: `shadcn-dark`
 
-- Portada: fondo zinc-950, card con bordes zinc-800
-- Cuerpo: fondo blanco, tipografía slate
+- Slides de video: fondo zinc-950, tipografía clara, bordes zinc-800
 - Código: fondo dark con fuente monospace
 - Tablas: headers oscuros, filas alternadas
-
-### Built-in: `presupuesto-norpan`
-
-- Portada: imagen de fondo full-bleed + overlay blanco con títulos Poppins
-- Cuerpo: Cambria 11pt (serif) para texto, Calibri Bold para headings
-- Formato: US Letter con márgenes de 1 pulgada
-- Ideal para: presupuestos, SRS, propuestas, documentos formales
 
 ### Tema personalizado
 
@@ -494,13 +466,11 @@ export default CSS;
 ## 📖 Uso como Módulo
 
 ```javascript
-import { exportTutorialToPDF } from 'replicant-2049';
+import { exportTutorialToHTML } from 'replicant-2049';
 import { exportTutorialToVideo } from 'replicant-2049/video';
-import { exportToDocx } from 'replicant-2049/docx';
 
-await exportTutorialToPDF(config);
+await exportTutorialToHTML(config);
 await exportTutorialToVideo(config);
-await exportToDocx(config);
 ```
 
 ## 🔄 Progress Tracking

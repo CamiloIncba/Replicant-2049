@@ -1,6 +1,6 @@
 # 📘 Guía de Creación de Tutoriales para Aplicaciones Web
 
-> **Skill** — Metodología estándar para documentar aplicaciones web internas con capturas automatizadas y exportación a PDF profesional.
+> **Skill** — Metodología estándar para documentar aplicaciones web internas con capturas automatizadas y exportación a HTML/Video.
 
 ---
 
@@ -12,7 +12,6 @@ Cada proyecto que requiere documentación utiliza una carpeta auxiliar con el su
 MI-PROYECTO/              ← Código fuente
 MI-PROYECTO-more/         ← Documentación
 ├── TUTORIAL-MI-PROYECTO.md
-├── TUTORIAL-MI-PROYECTO.pdf      (generado)
 ├── tutorial.config.js            (configuración del generador)
 ├── SS/                           (screenshots)
 │   ├── logo.png
@@ -34,7 +33,6 @@ MI-PROYECTO-more/         ← Documentación
 |----------|---------|---------|
 | Carpeta doc | `{PROYECTO}-more/` | `APP-PAGOS-more/` |
 | Markdown | `TUTORIAL-{PROYECTO}.md` | `TUTORIAL-APP-PAGOS.md` |
-| PDF | `TUTORIAL-{PROYECTO}.pdf` | `TUTORIAL-APP-PAGOS.pdf` |
 | Screenshots | `NN-descripcion.png` | `07-filtro-estado.png` |
 | Config | `tutorial.config.js` | — |
 
@@ -53,7 +51,7 @@ MI-PROYECTO-more/         ← Documentación
 ---
 ```
 
-> El generador de PDF reemplaza el H1 con la portada. El encabezado del MD sirve como referencia rápida al leer el archivo directamente.
+> El exportador HTML reemplaza el H1 con metadatos. El encabezado del MD sirve como referencia rápida al leer el archivo directamente.
 
 ### 2.2 Índice
 
@@ -65,7 +63,7 @@ MI-PROYECTO-more/         ← Documentación
 ...
 ```
 
-> El generador crea su propio índice con links internos. El índice en el MD se elimina automáticamente del PDF.
+> El exportador crea su propio índice con links internos. El índice en el MD se elimina automáticamente del HTML.
 
 ### 2.3 Secciones Estándar
 
@@ -193,7 +191,7 @@ Cada proyecto tiene su propio archivo de configuración en la carpeta `-more/`:
 ```javascript
 export default {
   input: './TUTORIAL-MI-PROYECTO.md',
-  output: './TUTORIAL-MI-PROYECTO.pdf',
+  output: './TUTORIAL-MI-PROYECTO.html',
   imagesDir: './SS',
 
   cover: {
@@ -217,7 +215,7 @@ export default {
 | Opción | Tipo | Descripción |
 |--------|------|-------------|
 | `input` | string | Ruta al `.md` (relativa al config) |
-| `output` | string | Ruta del PDF generado |
+| `output` | string | Ruta del HTML generado |
 | `imagesDir` | string | Carpeta de screenshots |
 | `cover.logo` | string | Ruta a imagen del logo |
 | `cover.title` | string | Título principal (admite `\n`) |
@@ -235,33 +233,29 @@ export default {
 
 ---
 
-## 6. Generación del PDF
+## 6. Generación del HTML
 
 ### 6.1 Comando
 
 ```bash
 # Desde la carpeta -more/ del proyecto
-npx replicant-pdf --config ./tutorial.config.js
+npx replicant export --config ./tutorial.config.js --html
 ```
 
-### 6.2 Qué Hace el Generador
+### 6.2 Qué Hace el Exportador
 
 1. Lee el Markdown y cuenta imágenes disponibles
-2. Convierte a HTML con `marked`, embebiendo imágenes como base64
-3. Genera portada con el tema elegido (shadcn dark por defecto)
-4. Construye tabla de contenidos automática desde los H2/H3
-5. Elimina el H1 original y la sección de índice del MD
-6. Renderiza en Playwright (Chromium headless)
-7. Exporta a PDF con márgenes, header y footer configurados
+2. Convierte a HTML con `marked`, manteniendo imágenes como rutas relativas
+3. Genera tabla de contenidos (TOC JSON) desde los H2/H3
+4. Elimina el H1 original y la sección de índice del MD
+5. Copia imágenes al directorio destino
+6. Escribe `tutorial-content.html`, `tutorial-toc.json`, `tutorial-meta.json`
 
 ### 6.3 Resultado Esperado
 
-- PDF con portada profesional (tema oscuro con logo)
-- Índice con links clickeables
-- Imágenes embebidas (sin dependencias externas)
-- Numeración de páginas automática
-- Header personalizado en cada página
-- Tipografía limpia, tablas con bordes redondeados, código resaltado
+- HTML fragment listo para embedding in-app
+- TOC JSON para scroll-spy en frontend
+- Imágenes con lazy loading
 
 ---
 
@@ -273,10 +267,10 @@ Antes de distribuir el tutorial:
 - [ ] No hay screenshots con datos sensibles (contraseñas, tokens, datos reales de clientes)
 - [ ] El Markdown no tiene errores de formato (revisar en VS Code Preview)
 - [ ] Las imágenes referencidas en el MD existen en `SS/`
-- [ ] El PDF se genera sin warnings de imágenes faltantes
+- [ ] El HTML se genera sin warnings de imágenes faltantes
 - [ ] La versión y fecha están actualizadas en el config y en el MD
 - [ ] El índice refleja todas las secciones
-- [ ] Revisar el PDF en un visor: portada, índice, imágenes, formato de código
+- [ ] Verificar el HTML en la página /tutorial de la app: TOC, imágenes, formato de código
 
 ---
 
@@ -288,7 +282,7 @@ Antes de distribuir el tutorial:
 2. Re-capturar solo las screenshots que cambiaron
 3. Actualizar el texto correspondiente en el MD
 4. Incrementar la versión (ej: `1.0` → `1.1`)
-5. Regenerar el PDF
+5. Regenerar el HTML
 
 ### 8.2 Versionado
 
@@ -301,4 +295,4 @@ Antes de distribuir el tutorial:
 
 ---
 
-*Documento de referencia para el equipo de desarrollo — Tutorial PDF Video Generator*
+*Documento de referencia para el equipo de desarrollo — Replicant-2049*

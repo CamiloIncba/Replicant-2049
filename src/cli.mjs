@@ -2,7 +2,7 @@
 /**
  * ============================================================
  *  CLI — Replicant-2049
- *  Generate professional documentation, PDFs, and videos
+ *  Generate professional documentation, HTML, and videos
  * ============================================================
  *
  *  Usage:
@@ -12,8 +12,8 @@
  *    init              Initialize a new project with documentation structure
  *    sync              Check and track documentation progress
  *    generate          Generate final documents using Claude API
- *    export            Generate PDF/DOCX/Video from Markdown
- *    (no command)      Legacy mode: export with --pdf/--docx/--video flags
+ *    export            Generate HTML/Video from Markdown
+ *    (no command)      Legacy mode: export with --html/--video flags
  * ============================================================
  */
 
@@ -21,9 +21,7 @@ import { resolve, dirname } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { pathToFileURL, fileURLToPath } from 'url';
 import { spawn } from 'child_process';
-import { exportTutorialToPDF } from './export-pdf.mjs';
 import { exportTutorialToVideo } from './export-video.mjs';
-import { exportToDocx } from './export-docx.mjs';
 import { exportTutorialToHTML } from './export-html.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -79,9 +77,7 @@ function runSubcommand(scriptName) {
 function parseExportArgs() {
   const args = process.argv.slice(2);
   let configPath = null;
-  let doPdf = false;
   let doVideo = false;
-  let doDocx = false;
   let doHtml = false;
   let skipCapture = false;
   let outputDir = null;
@@ -96,12 +92,8 @@ function parseExportArgs() {
     } else if (args[i] === '--output-dir' && args[i + 1]) {
       outputDir = resolve(args[i + 1]);
       i++;
-    } else if (args[i] === '--pdf') {
-      doPdf = true;
     } else if (args[i] === '--video') {
       doVideo = true;
-    } else if (args[i] === '--docx') {
-      doDocx = true;
     } else if (args[i] === '--html') {
       doHtml = true;
     } else if (args[i] === '--skip-capture') {
@@ -123,7 +115,7 @@ function parseExportArgs() {
     configPath = resolve(process.cwd(), 'tutorial.config.js');
   }
 
-  return { configPath, doPdf, doVideo, doDocx, doHtml, skipCapture, outputDir };
+  return { configPath, doVideo, doHtml, skipCapture, outputDir };
 }
 
 function printHelp() {
@@ -131,7 +123,7 @@ function printHelp() {
   ${colors.bright}${colors.cyan}Replicant-2049${colors.reset}
   ────────────────────────────────────
 
-  Generate professional documentation, PDFs, and videos.
+  Generate professional documentation, HTML, and videos.
 
   ${colors.bright}Usage:${colors.reset}
     npx replicant <command> [options]
@@ -140,13 +132,11 @@ function printHelp() {
     ${colors.green}init${colors.reset}              Initialize a new project with documentation
     ${colors.green}sync${colors.reset}              Check and track documentation progress
     ${colors.green}generate${colors.reset}          Generate final documents using Claude API
-    ${colors.green}export${colors.reset}            Generate PDF/DOCX/Video from Markdown
+    ${colors.green}export${colors.reset}            Generate HTML/Video from Markdown
     ${colors.green}audit${colors.reset}             Audit project against mandatory standards
 
   ${colors.bright}Export Options:${colors.reset}
     --config <path>   Path to config file (default: ./tutorial.config.js)
-    --pdf             Generate PDF (default if no flag specified)
-    --docx            Generate DOCX (Word document)
     --html            Generate HTML fragment for in-app embedding
     --video           Generate MP4 video
     --output-dir <p>  Output directory (for --html export)
@@ -161,10 +151,9 @@ function printHelp() {
     npx replicant sync --check
     npx replicant generate --project TC
     npx replicant generate --all --dir "C:\\Proyectos\\NOR-PAN"
-    npx replicant export --config ./tutorial.config.js --pdf
-    npx replicant export --config ./tutorial.config.js --skip-capture
+    npx replicant export --config ./tutorial.config.js --html
     npx replicant export --config ./tutorial.config.js --html --output-dir ./public/tutorial
-    npx replicant --pdf --video   # Legacy mode
+    npx replicant export --config ./tutorial.config.js --video --skip-capture
     npx replicant audit --dir "C:\\Proyectos\\NOR-PAN"
     npx replicant audit --dir . --verbose
     npx replicant audit --dir . --json
@@ -215,7 +204,7 @@ async function runCaptureScript(captureConfig, configDir) {
 }
 
 async function handleExport() {
-  const { configPath, doPdf, doVideo, doDocx, doHtml, skipCapture, outputDir } = parseExportArgs();
+  const { configPath, doVideo, doHtml, skipCapture, outputDir } = parseExportArgs();
 
   if (!existsSync(configPath)) {
     console.error(`\n  ❌ Config file not found: ${configPath}`);
@@ -230,14 +219,10 @@ async function handleExport() {
   const configModule = await import(configUrl);
   const config = configModule.default || configModule;
 
-  // Auto-detect format from output extension when no explicit flag was passed
-  const outputIsDocx = config.output && config.output.endsWith('.docx');
-  const explicitFlags = doDocx || doPdf || doVideo || doHtml;
+  const explicitFlags = doVideo || doHtml;
 
-  // If user passed --docx or output is .docx (and no explicit --pdf)
-  const shouldDocx = doDocx || (outputIsDocx && !doPdf);
-  // PDF only if --pdf explicit, or default (no flags) and output is not .docx
-  const shouldPdf = doPdf || (!explicitFlags && !outputIsDocx);
+  // Default to HTML if no flags specified
+  const shouldHtml = doHtml || !explicitFlags;
 
   // Resolve paths relative to config file location
   const configDir = dirname(configPath);
@@ -263,15 +248,15 @@ async function handleExport() {
       ...config.video,
       output: config.video.output
         ? resolve(configDir, config.video.output)
-        : resolvedConfig.output.replace(/\.pdf$/i, '.mp4'),
+        : resolvedConfig.output.replace(/\.(pdf|md)$/i, '.mp4'),
     };
     if (config.video.backgroundMusic) {
       resolvedConfig.video.backgroundMusic = resolve(configDir, config.video.backgroundMusic);
     }
   }
 
-  // ─── Capture screenshots before PDF/DOCX ─────────────────────
-  const needsCapture = shouldPdf || shouldDocx || doHtml;
+  // ─── Capture screenshots before export ────────────────────────
+  const needsCapture = shouldHtml || doVideo;
   if (!skipCapture && config.capture?.script && needsCapture) {
     await runCaptureScript(config.capture, configDir);
   } else if (skipCapture) {
@@ -281,18 +266,7 @@ async function handleExport() {
   }
 
   // Execute requested exports
-  if (shouldDocx) {
-    const docxOutput = resolvedConfig.output.endsWith('.docx')
-      ? resolvedConfig.output
-      : resolvedConfig.output.replace(/\.pdf$/i, '.docx');
-    await exportToDocx({ ...resolvedConfig, output: docxOutput });
-  }
-
-  if (shouldPdf) {
-    await exportTutorialToPDF(resolvedConfig);
-  }
-
-  if (doHtml) {
+  if (shouldHtml) {
     await exportTutorialToHTML(resolvedConfig, { outputDir });
   }
 

@@ -2,7 +2,7 @@
  * tutorial.config.js — Example configuration
  *
  * Copy this file to your project's `-more/` folder and customize.
- * Run with: npx replicant-pdf --config ./tutorial.config.js
+ * Run with: npx replicant export --config ./tutorial.config.js --html
  */
 
 export default {
@@ -10,8 +10,8 @@ export default {
   /** Path to the Markdown source file (relative to this config file) */
   input: './TUTORIAL-MY-PROJECT.md',
 
-  /** Path for the generated PDF (relative to this config file) */
-  output: './TUTORIAL-MY-PROJECT.pdf',
+  /** Path for the generated output (relative to this config file) */
+  output: './TUTORIAL-MY-PROJECT.html',
 
   /** Directory containing screenshots referenced in Markdown */
   imagesDir: './SS',

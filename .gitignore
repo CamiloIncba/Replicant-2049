@@ -1,6 +1,7 @@
 node_modules/
 dist/
 *.pdf
+*.docx
 .env
 .DS_Store
 Thumbs.db
