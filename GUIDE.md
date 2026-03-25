@@ -357,6 +357,8 @@ El generador:
 
 ## 🎥 Escenario 5: Generar video tutorial
 
+> ⚠️ **Estado: Dev** — Esta funcionalidad está en desarrollo. El video se genera pero el resultado no cumple expectativas de calidad (sin transiciones, sin música, sin animaciones de slides). Usar solo para pruebas internas.
+
 **Situación:** Querés crear un video MP4 con slides del tutorial.
 
 ```bash
@@ -388,7 +390,7 @@ El video se genera como slides estáticos (cada sección H2/H3 = 1 slide) conver
 | Generar docs con IA | `npx replicant generate --project X` |
 | Generar docs específicos | `npx replicant generate --project X --docs SRS,PLAN` |
 | Exportar tutorial HTML | `npx replicant export --config ./tutorial.config.js --html` |
-| Exportar video MP4 | `npx replicant export --config ./tutorial.config.js --video` |
+| Exportar video MP4 🚧 | `npx replicant export --config ./tutorial.config.js --video` *(dev)* |
 | Ver ayuda | `npx replicant --help` |
 | Ver versión | `npx replicant --version` |
 

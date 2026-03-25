@@ -13,7 +13,7 @@
 | `replicant init` | Scaffolding de documentación para nuevos proyectos | ✅ Completo |
 | `replicant sync` | Verificación de estado y progreso de documentación | ✅ Completo |
 | `replicant generate` | Generación automática de documentos con GitHub Models | ✅ Completo |
-| `replicant export` | Exportar Markdown a HTML, MP4 | ✅ Completo |
+| `replicant export` | Exportar Markdown a HTML (`--html` ✅), MP4 (`--video` 🚧) | ⚠️ Parcial |
 | `replicant audit` | Auditoría de estándares del proyecto (27 checks) | ✅ Completo |
 
 ### 🤖 Generación con IA (GitHub Models)
@@ -30,11 +30,14 @@
 - ✅ Metadata JSON (título, versión, fecha, contadores)
 - ✅ Copia automática de imágenes al directorio destino
 
-### 🎥 Exportación Video (`--video`)
-- ✅ Markdown → slides HTML renderizados con Playwright
-- ✅ Slides estáticos convertidos a clips MP4 vía FFmpeg
-- ✅ Concatenación de clips en video final
-- ✅ Cursor visual overlay para grabaciones
+### 🎥 Exportación Video (`--video`) — 🚧 En desarrollo
+
+> **Estado: Dev** — La funcionalidad básica existe pero el resultado no cumple expectativas de calidad. Faltan transiciones, música y animaciones. Usar con precaución.
+
+- 🚧 Markdown → slides HTML renderizados con Playwright
+- 🚧 Slides estáticos convertidos a clips MP4 vía FFmpeg
+- 🚧 Concatenación de clips en video final (hard-cut, sin transiciones)
+- 🚧 Cursor visual overlay para grabaciones
 
 ### 📸 Pipeline de Capturas
 - ✅ Integración con script de capturas (Playwright)
