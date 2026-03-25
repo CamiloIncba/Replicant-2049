@@ -1,6 +1,6 @@
 {
   "name": "replicant-2049",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Replicant 2049 - AI-powered project documentation generator & full-stack scaffolding. Generate SRS/PLAN/README via GitHub Models, export to HTML/MP4, scaffold Express+React projects.",
   "type": "module",
   "bin": {

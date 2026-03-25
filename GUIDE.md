@@ -380,6 +380,57 @@ El video se genera como slides estáticos (cada sección H2/H3 = 1 slide) conver
 
 ---
 
+## 🛠️ Escenario 6: Development Workflow con Skills de Proceso
+
+**Situación:** Querés que tu agente de IA siga un workflow disciplinado al desarrollar features (brainstorming → plan → TDD → review → merge).
+
+### Paso 1: Verificar que los skills existen
+
+Los skills de proceso viven en `Skills/process/` dentro de Replicant-2049:
+
+```
+Skills/process/
+├── DEVELOPMENT-WORKFLOW.md    ← Flujo completo (referencia)
+├── BRAINSTORMING.md           ← Idea → Diseño aprobado
+├── GIT-WORKFLOW.md            ← dev/main, preguntar antes de commit
+├── WRITING-PLANS.md           ← Diseño → Tareas bite-sized
+├── SUBAGENT-DEVELOPMENT.md    ← Subagente por tarea + 2 reviews
+├── TEST-DRIVEN-DEVELOPMENT.md ← RED-GREEN-REFACTOR obligatorio
+├── CODE-REVIEW.md             ← Review spec + calidad
+├── FINISHING-BRANCH.md        ← Merge/PR con aprobación
+├── SYSTEMATIC-DEBUGGING.md    ← 4 fases de debugging
+├── VERIFICATION-BEFORE-COMPLETION.md ← Evidencia antes de claims
+├── WRITING-SKILLS.md          ← TDD para documentación
+└── DISPATCHING-PARALLEL-AGENTS.md    ← Agentes paralelos
+```
+
+### Paso 2: Referenciar en CLAUDE.md del proyecto
+
+Asegurate de que el `CLAUDE.md` de tu proyecto incluya la sección de "Reglas de Desarrollo (Mandatory)" que el template de Replicant genera automáticamente. Esto garantiza que cualquier agente que trabaje en el proyecto siga las reglas.
+
+### Paso 3: El flujo en la práctica
+
+Cuando le pedís al agente "agregá feature X", el flujo debería ser:
+
+```
+1. BRAINSTORMING → El agente pregunta, propone enfoques, presenta diseño
+2. WRITING-PLANS → Descompone en tareas de 2-5 min con código completo
+3. GIT-WORKFLOW → Verifica rama dev, baseline limpio
+4. TDD por tarea → Test falla → Código mínimo → Test pasa → Commit (pregunta antes)
+5. CODE-REVIEW → Spec compliance + Code quality
+6. VERIFICATION → Correr tests, lint, build — evidencia real
+7. FINISHING-BRANCH → Pregunta: merge/PR/keep/discard
+```
+
+### Principios clave
+
+- **TDD obligatorio** — No hay código sin test que falle primero
+- **Preguntar antes de commit/push** — El usuario controla qué va al repo
+- **Evidencia antes de claims** — "Listo" solo si los tests pasan y lo demostrás
+- **Anti-racionalización** — Cada skill tiene tablas "Excusa vs Realidad"
+
+---
+
 ## 📋 Referencia rápida
 
 | Necesito... | Comando |

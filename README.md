@@ -54,10 +54,35 @@
 - ✅ Exit code 1 en failures (compatible CI)
 
 ### 📁 Skills Templates
-- ✅ SRS (IEEE 830), PLAN, CLAUDE, README, LOVABLE-PROMPT, ERASER-DSL
+- ✅ SRS (IEEE 830), PLAN, CLAUDE, README, LOVABLE-PROMPT, ERASER-DSL, DESIGN
 - ✅ TUTORIAL_GUIDE con guía de estructura
-- ✅ STANDARDS.md con 27 estándares verificables
+- ✅ STANDARDS.md con 29 estándares verificables
 - ✅ Estándares de arquitectura (`Skills/arch/AUTH.md`, `BACKEND.md`, `FRONTEND.md`, `SECURITY.md`)
+
+### 🛠️ Skills de Proceso (Development Workflow)
+- ✅ **DEVELOPMENT-WORKFLOW.md** — Workflow completonSpec → Plan → Execute con 7 fases
+- ✅ **BRAINSTORMING.md** — Diálogo socrático, 2-3 enfoques, diseño en secciones, spec aprobado
+- ✅ **GIT-WORKFLOW.md** — Ramas dev/main, HARD-GATE: preguntar antes de commit/push
+- ✅ **WRITING-PLANS.md** — Planes con tareas bite-sized (2-5 min), paths exactos, código completo
+- ✅ **SUBAGENT-DEVELOPMENT.md** — Subagente por tarea + review 2 etapas (spec → calidad)
+- ✅ **TEST-DRIVEN-DEVELOPMENT.md** — RED-GREEN-REFACTOR estricto, Iron Law, anti-racionalización
+- ✅ **CODE-REVIEW.md** — Review de 2 etapas: spec compliance + code quality
+- ✅ **FINISHING-BRANCH.md** — Verificar tests, opciones merge/PR/keep/discard
+- ✅ **SYSTEMATIC-DEBUGGING.md** — 4 fases: root cause → pattern → hypothesis → implementation
+- ✅ **VERIFICATION-BEFORE-COMPLETION.md** — Iron Law: evidencia antes de claims
+- ✅ **WRITING-SKILLS.md** — TDD para documentación de procesos
+- ✅ **DISPATCHING-PARALLEL-AGENTS.md** — Coordinación de subagentes paralelos
+
+### 🛡️ Anti-Racionalización Integrada
+- ✅ Tablas "Excusa vs Realidad" en cada skill de proceso
+- ✅ Listas de Red Flags para auto-chequeo del agente
+- ✅ Hard Gates que bloquean acción sin aprobación
+- ✅ Sección obligatoria en CLAUDE.md generados con reglas TDD + Git + Verificación
+
+### 🔄 Plan Review Loop
+- ✅ Self-review automático en `generate`: doc generado se revisa contra template
+- ✅ Corrige secciones faltantes, placeholders sin reemplazar, contenido genérico
+- ✅ Best-effort (si falla review, usa documento original)
 
 ### 🏗️ Scaffolding Full-Stack (`init --full`)
 - ✅ Backend Express 5 + TypeScript + Mongoose (boilerplate listo)
@@ -81,6 +106,7 @@
 | **P4** | sync `--update-progress` | El flag se parsea pero no tiene lógica. Debería reescribir las tablas de progreso en CLAUDE.md automáticamente. |
 | **P5** | Modelos Anthropic directo | Solo funciona vía GitHub Models API proxy. No hay soporte para `ANTHROPIC_API_KEY` directo. El default real es `openai/gpt-4.1-mini`, no Sonnet 4 como dice la ayuda. |
 | **P6** | Eliminar dep `fluent-ffmpeg` | Está en `dependencies` pero nunca se importa. export-video.mjs usa `child_process.spawn` + `ffmpeg-static` directamente. |
+| **P7** | Token Efficiency en Skills | Optimizar el tamaño de los skills de proceso (<500 palabras). Cross-references en vez de repetición. Técnicas de CSO (Claude Search Optimization) para discovery automático de skills relevantes. |
 
 ## 📦 Instalación
 

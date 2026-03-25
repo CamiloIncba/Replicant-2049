@@ -219,4 +219,47 @@ Antes de marcar como completo:
 
 ---
 
+## Sección a incluir en CLAUDE.md generados
+
+El template debe incluir la siguiente sección obligatoria en cada CLAUDE.md generado. Esto garantiza que los agentes que trabajen en el proyecto sigan las reglas de desarrollo:
+
+```markdown
+---
+
+## 🛡️ Reglas de Desarrollo (Mandatory)
+
+> Reglas obligatorias para todo agente que trabaje en este proyecto. Basadas en el workflow Superpowers adaptado por Replicant-2049.
+
+### TDD Obligatorio
+- NO hay código de producción sin test que falle primero
+- Si escribiste código antes del test → borralo y empezá de nuevo
+- No mantenerlo como "referencia", no "adaptarlo" — borrar significa borrar
+- Ver `Skills/process/TEST-DRIVEN-DEVELOPMENT.md` para el proceso completo
+
+| Excusa | Realidad |
+|--------|----------|
+| "Muy simple para testear" | Código simple se rompe. Test toma 30 segundos. |
+| "Voy a testear después" | Tests que pasan inmediatamente no prueban nada. |
+| "Es sobre el espíritu, no el ritual" | Tests-después son bias de implementación. Tests-primero fuerzan diseño. |
+| "TDD me va a hacer más lento" | TDD es más rápido que debugging. |
+
+### Verificación Antes de Claims
+- NO declarar "listo", "funciona", "terminado" sin ejecutar tests y mostrar output
+- Evidencia > Confianza. Ejecutá el comando, leé el output, RECIÉN AHÍ declarà
+- "Debería funcionar" → EJECUTÁ la verificación
+
+### Git Workflow
+- SIEMPRE preguntar al usuario antes de commit o push
+- Trabajar en rama `dev`, mergear a `main` solo con aprobación del usuario
+- NUNCA hacer force push
+- Ver `Skills/process/GIT-WORKFLOW.md` para el proceso completo
+
+### Debugging
+- SIEMPRE encontrar causa raíz antes de intentar fixes
+- Fase 1: Investigar → Fase 2: Analizar patrones → Fase 3: Hipótesis → Fase 4: Implementar
+- Si 3+ fixes fallaron: STOP y cuestionar la arquitectura con el usuario
+```
+
+---
+
 *Skill para Replicant-2049 — INCBA*

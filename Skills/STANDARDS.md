@@ -311,6 +311,27 @@ Cada estándar tiene:
 
 ---
 
+### QA-05 · Test Coverage Mínimo
+**Descripción:** El proyecto debe tener scripts de test definidos y directorio de tests con archivos.  
+**Verificación:**
+- Existe script `test` en `package.json` del backend y/o frontend
+- Directorio `test/`, `tests/`, `__tests__/`, o `src/**/*.spec.*` con archivos de test
+- Al menos 1 archivo de test por directorio de código principal
+
+**Justificación:** Sin tests automatizados no hay garantía de que el código funciona. TDD requiere que existan tests antes del código.
+
+---
+
+### QA-06 · Workflow de Desarrollo Documentado
+**Descripción:** El proyecto referencia skills de proceso para guiar al agente de desarrollo.  
+**Verificación:**
+- `CLAUDE.md` del proyecto contiene referencia a skills de proceso o reglas de TDD
+- Existe `Skills/process/` con al menos `TEST-DRIVEN-DEVELOPMENT.md` y `GIT-WORKFLOW.md` en el sistema Replicant
+
+**Justificación:** Sin workflow documentado, los agentes improvisan y saltan pasos críticos (TDD, reviews, verificación).
+
+---
+
 ## Resumen de Estándares
 
 | Código | Nombre | Categoría |
@@ -342,5 +363,7 @@ Cada estándar tiene:
 | QA-02 | Tests E2E | Quality |
 | QA-03 | Linting | Quality |
 | QA-04 | TypeScript Estricto | Quality |
+| QA-05 | Test Coverage Mínimo | Quality |
+| QA-06 | Workflow de Desarrollo Documentado | Quality |
 
-**Total: 27 estándares obligatorios**
+**Total: 29 estándares obligatorios**

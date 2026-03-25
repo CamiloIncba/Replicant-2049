@@ -583,6 +583,50 @@ function buildChecks(project) {
         return { status: 'pass', detail: checks.join(', ') };
       },
     },
+    {
+      id: 'QA-05',
+      name: 'Test Coverage Mínimo',
+      category: 'QA',
+      check() {
+        const checks = [];
+        for (const [label, dir] of [['backend', backend], ['frontend', frontend]]) {
+          if (!existsSync(dir)) continue;
+          const pkg = readIfExists(join(dir, 'package.json')) || '';
+          const hasTestScript = /"test"\s*:/.test(pkg);
+          const testDirs = ['test', 'tests', '__tests__', 'e2e'].map(d => join(dir, d));
+          const srcTestFiles = grepDir(dir, '\.spec\.|\.(test)\.(ts|js|tsx|jsx)', ['.ts', '.js', '.tsx', '.jsx']);
+          const hasTestDir = testDirs.some(d => existsSync(d) && readdirSync(d).length > 0);
+          const hasTestFiles = hasTestDir || srcTestFiles.length > 0;
+          if (hasTestScript && hasTestFiles) checks.push(`${label}: tests ✓`);
+          else if (hasTestScript) checks.push(`${label}: script sin archivos de test`);
+          else if (hasTestFiles) checks.push(`${label}: tests sin script`);
+          else checks.push(`${label}: sin tests ✗`);
+        }
+        const passing = checks.filter((c) => c.includes('✓'));
+        if (passing.length === 0) return { status: 'fail', detail: checks.join(', ') };
+        if (passing.length < checks.length) return { status: 'warn', detail: checks.join(', ') };
+        return { status: 'pass', detail: checks.join(', ') };
+      },
+    },
+    {
+      id: 'QA-06',
+      name: 'Workflow de Desarrollo Documentado',
+      category: 'QA',
+      check() {
+        const claudeMd = readIfExists(join(more, 'CLAUDE.md')) || '';
+        const hasTddRef = /TDD|test.driven|test-driven|test first|skills?\/process/i.test(claudeMd);
+        const hasGitRef = /git.workflow|rama dev|branch dev|preguntar antes de commit/i.test(claudeMd);
+        const details = [];
+        if (hasTddRef) details.push('TDD referenciado ✓');
+        else details.push('TDD no referenciado en CLAUDE.md ✗');
+        if (hasGitRef) details.push('Git workflow referenciado ✓');
+        else details.push('Git workflow no referenciado en CLAUDE.md ✗');
+        const passing = details.filter((d) => d.includes('✓')).length;
+        if (passing === 0) return { status: 'fail', detail: details.join(', ') };
+        if (passing < 2) return { status: 'warn', detail: details.join(', ') };
+        return { status: 'pass', detail: details.join(', ') };
+      },
+    },
   ];
 }
 

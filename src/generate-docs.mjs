@@ -510,6 +510,42 @@ Genera el documento completo en Markdown. Responde SOLO con el contenido del doc
     // Strip wrapping ```markdown code fences that models often add
     content = stripCodeFences(content);
 
+    // ─── Plan Review Loop ────────────────────────────────────
+    // Self-review: verify generated doc against template structure
+    // This catches missing sections, placeholder leftovers, and structure gaps
+    try {
+      const reviewSystemPrompt = `Sos un revisor de documentación técnica. Tu trabajo es verificar que un documento generado cumple con la estructura del template original.
+
+Reglas:
+- Verificar que TODAS las secciones del template están presentes en el documento
+- Verificar que NO quedan placeholders sin reemplazar ({{...}})
+- Verificar que el contenido es específico del proyecto (no genérico)
+- Si encontrás problemas, devolver el documento CORREGIDO
+- Si el documento está bien, devolver "APPROVED" (exactamente esa palabra)
+
+Respondé SOLO con "APPROVED" o con el documento corregido completo.`;
+
+      const reviewUserPrompt = `TEMPLATE ORIGINAL (estructura esperada):\n\n${skill.substring(0, 2000)}\n\n---\n\nDOCUMENTO GENERADO PARA REVISAR:\n\n${content.substring(0, 6000)}\n\n---\n\nVerificá que el documento cumple con la estructura del template. Si está bien, respondé "APPROVED". Si hay problemas, devolvé el documento corregido.`;
+
+      const reviewResponse = await callGitHubModels(token, model, reviewSystemPrompt, reviewUserPrompt, docDef.maxTokens);
+      const reviewContent = reviewResponse.choices?.[0]?.message?.content || '';
+      const reviewUsage = reviewResponse.usage || { prompt_tokens: 0, completion_tokens: 0 };
+
+      // Accumulate review tokens
+      usage.prompt_tokens += reviewUsage.prompt_tokens;
+      usage.completion_tokens += reviewUsage.completion_tokens;
+
+      // If review returned a corrected version (not just "APPROVED"), use it
+      const trimmedReview = stripCodeFences(reviewContent).trim();
+      if (trimmedReview && !trimmedReview.startsWith('APPROVED')) {
+        content = trimmedReview;
+      }
+    } catch (reviewErr) {
+      // Review failed — use original content, don't block generation
+      // This is a best-effort enhancement
+    }
+    // ─── End Plan Review Loop ────────────────────────────────
+
     return {
       success: true,
       content,
