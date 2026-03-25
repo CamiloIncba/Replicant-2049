@@ -1,6 +1,6 @@
 # REPLICANT 2049
 
-> Sistema de documentación inteligente para proyectos INCBA. Analiza código fuente, genera documentos con GitHub Models (SRS, PLAN, README, etc.) y exporta a PDF, DOCX y MP4.
+> Sistema de documentación inteligente y scaffolding full-stack para proyectos INCBA. Analiza código fuente, genera documentos con GitHub Models (SRS, PLAN, README, etc.), exporta a HTML y MP4, y audita estándares de calidad.
 
 ---
 
@@ -504,9 +504,10 @@ Cuando todos los RFs llegan al 100%, se muestra:
 🎉 ALL RFs COMPLETE! Ready for release.
 ```
 
-## 📘 Documentation Guide
+## 📘 Guías
 
-Ver [Skills/TUTORIAL_GUIDE.md](Skills/TUTORIAL_GUIDE.md) para la guía completa de cómo estructurar tutoriales.
+- [GUIDE.md](GUIDE.md) — Guía de uso práctica con escenarios y ejemplos paso a paso
+- [Skills/STANDARDS.md](Skills/STANDARDS.md) — 27 estándares obligatorios verificables con `audit`
 
 ## 📄 Licencia
 
