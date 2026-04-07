@@ -110,6 +110,12 @@ const DOC_DEFINITIONS = {
     label: 'Diagramas Eraser.io',
     maxTokens: 4000,
   },
+  AWS_SUPERVISOR: {
+    output: 'AWS-SUPERVISOR.md',
+    skill: 'AWS_SUPERVISOR_TEMPLATE.md',
+    label: 'AWS Supervisor (Reglas Agentes)',
+    maxTokens: 4000,
+  },
 };
 
 // ─── Parse CLI args ────────────────────────────────────────────

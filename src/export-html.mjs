@@ -21,6 +21,36 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync, readd
 import { join, resolve, dirname, extname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { marked } from 'marked';
+import postcss from 'postcss';
+import tailwindcss from 'tailwindcss';
+
+/**
+ * Generate prose typography CSS using Tailwind + @tailwindcss/typography.
+ * Returns only the CSS needed for the prose-wrapped content (no preflight/reset).
+ */
+async function generateProseCSS(htmlContent) {
+  try {
+    const typography = (await import('@tailwindcss/typography')).default;
+
+    const result = await postcss([
+      tailwindcss({
+        content: [{ raw: htmlContent, extension: 'html' }],
+        darkMode: 'class',
+        corePlugins: { preflight: false },
+        theme: { extend: {} },
+        plugins: [typography],
+      }),
+    ]).process(
+      '@tailwind components;\n@tailwind utilities;\n',
+      { from: undefined }
+    );
+
+    return result.css;
+  } catch (err) {
+    console.warn('  ⚠️  No se pudo generar CSS de tipografía:', err.message);
+    return null;
+  }
+}
 
 /**
  * Process Markdown into HTML, keeping image paths as relative URLs.
@@ -200,6 +230,18 @@ export async function exportTutorialToHTML(config, options = {}) {
     }
   }
 
+  // ─── Prose wrapper + typography CSS ─────────────────────────
+  const proseClasses = 'prose prose-neutral dark:prose-invert max-w-none';
+  const proseHtml = `<div class="${proseClasses}">\n${html}\n</div>`;
+
+  console.log('  Generando estilos de tipografía...');
+  const proseCss = await generateProseCSS(proseHtml);
+
+  let finalHtml = proseHtml;
+  if (proseCss) {
+    finalHtml = `<style data-replicant-prose>\n${proseCss}\n</style>\n${proseHtml}`;
+  }
+
   // Build metadata
   const meta = {
     title: config.cover?.title?.replace(/\n/g, ' ') || 'Tutorial',
@@ -209,6 +251,7 @@ export async function exportTutorialToHTML(config, options = {}) {
     imageCount,
     tocEntries: toc.length,
     sourceLines: mdContent.split('\n').length,
+    proseEnabled: !!proseCss,
   };
 
   // Write files
@@ -216,16 +259,26 @@ export async function exportTutorialToHTML(config, options = {}) {
   const tocPath = join(outputDir, 'tutorial-toc.json');
   const metaPath = join(outputDir, 'tutorial-meta.json');
 
-  writeFileSync(htmlPath, html, 'utf8');
+  writeFileSync(htmlPath, finalHtml, 'utf8');
   writeFileSync(tocPath, JSON.stringify(toc, null, 2), 'utf8');
   writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
 
+  // Write standalone CSS file
+  let cssPath = null;
+  if (proseCss) {
+    cssPath = join(outputDir, 'tutorial-styles.css');
+    writeFileSync(cssPath, proseCss, 'utf8');
+  }
+
   console.log('  ✅ HTML exportado:');
   console.log('     📄 ' + htmlPath);
+  if (cssPath) {
+    console.log('     🎨 ' + cssPath);
+  }
   console.log('     📋 ' + tocPath + ` (${toc.length} entries)`);
   console.log('     📊 ' + metaPath);
   console.log('     🖼️  ' + join(outputDir, 'SS/') + ` (${copiedCount} images)`);
   console.log('========================================\n');
 
-  return { htmlPath, tocPath, metaPath, outputDir };
+  return { htmlPath, cssPath, tocPath, metaPath, outputDir };
 }

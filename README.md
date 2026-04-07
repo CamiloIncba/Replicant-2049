@@ -14,7 +14,7 @@
 | `replicant sync` | Verificación de estado y progreso de documentación | ✅ Completo |
 | `replicant generate` | Generación automática de documentos con GitHub Models | ✅ Completo |
 | `replicant export` | Exportar Markdown a HTML (`--html` ✅), MP4 (`--video` 🚧) | ⚠️ Parcial |
-| `replicant audit` | Auditoría de estándares del proyecto (27 checks) | ✅ Completo |
+| `replicant audit` | Auditoría de estándares del proyecto (30 checks) | ✅ Completo |
 
 ### 🤖 Generación con IA (GitHub Models)
 - ✅ Análisis automático de backend y frontend (controllers, models, componentes)
@@ -46,7 +46,7 @@
 - ✅ Configuración via `capture.script` en tutorial.config.js
 
 ### 📋 Auditoría de Estándares (`audit`)
-- ✅ 27 estándares obligatorios en 5 categorías (DOC, UX, FEAT, ARCH, QA)
+- ✅ 30 estándares obligatorios en 6 categorías (DOC, UX, FEAT, ARCH, AWS, QA)
 - ✅ Auto-detección de estructura proyecto (backend/frontend/more)
 - ✅ Reporte con colores y progress bar (✅/⚠️/❌)
 - ✅ Modo `--json` para uso programático
@@ -54,10 +54,10 @@
 - ✅ Exit code 1 en failures (compatible CI)
 
 ### 📁 Skills Templates
-- ✅ SRS (IEEE 830), PLAN, CLAUDE, README, LOVABLE-PROMPT, ERASER-DSL, DESIGN
+- ✅ SRS (IEEE 830), PLAN, CLAUDE, README, LOVABLE-PROMPT, ERASER-DSL, DESIGN, AWS-SUPERVISOR
 - ✅ TUTORIAL_GUIDE con guía de estructura
-- ✅ STANDARDS.md con 29 estándares verificables
-- ✅ Estándares de arquitectura (`Skills/arch/AUTH.md`, `BACKEND.md`, `FRONTEND.md`, `SECURITY.md`)
+- ✅ STANDARDS.md con 32 estándares verificables
+- ✅ Estándares de arquitectura (`Skills/arch/AUTH.md`, `BACKEND.md`, `FRONTEND.md`, `SECURITY.md`, `AWS-SUPERVISOR.md`)
 
 ### 🛠️ Skills de Proceso (Development Workflow)
 - ✅ **DEVELOPMENT-WORKFLOW.md** — Workflow completonSpec → Plan → Execute con 7 fases
@@ -141,6 +141,7 @@ TC-more/
 ├── PLAN.md             ← Plan de trabajo
 ├── LOVABLE-PROMPT.md   ← Prompts para mockups
 ├── ERASER-DSL.md       ← DSL para diagramas
+├── AWS-SUPERVISOR.md   ← Reglas AWS para agentes
 ├── TUTORIAL.md         ← Tutorial de usuario
 ├── SS/                 ← Screenshots
 └── diagrams/           ← Diagramas exportados
@@ -278,7 +279,7 @@ Los boilerplates implementan los estándares de arquitectura NOR-PAN:
 - **GET /users/me** — Auto-provisioning en primer login
 - **SKIP_AUTH** — Desarrollo local sin Auth0
 - **3 temas** — Light, Dark, Dusk con CSS variables
-- **27 estándares verificables** — `replicant audit` valida cumplimiento
+- **27 estándares verificables** — `replicant audit` valida cumplimiento + 3 estándares AWS
 
 ### Verificar documentación
 
@@ -399,11 +400,12 @@ Los templates en `Skills/` guían la generación de documentos:
 | `LOVABLE_PROMPT_TEMPLATE.md` | Prompts para mockups en lovable.dev |
 | `ERASER_DSL_TEMPLATE.md` | DSL para diagramas en eraser.io |
 | `README_TEMPLATE.md` | README técnico para repos |
-| `STANDARDS.md` | 27 estándares verificables (DOC, UX, FEAT, ARCH, QA) |
+| `STANDARDS.md` | 32 estándares verificables (DOC, UX, FEAT, ARCH, AWS, QA) |
 | `arch/AUTH.md` | Estándar de autenticación/autorización NOR-PAN |
 | `arch/BACKEND.md` | Estándar de arquitectura backend |
 | `arch/FRONTEND.md` | Estándar de arquitectura frontend |
 | `arch/SECURITY.md` | Estándar de seguridad por capas |
+| `arch/AWS-SUPERVISOR.md` | Reglas para agentes que interactúan con AWS |
 
 ## ⚙️ Project Config
 

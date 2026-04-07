@@ -476,6 +476,7 @@ async function main() {
   createDocFromTemplate('PLAN', join(moreDir, 'PLAN.md'), info);
   createDocFromTemplate('LOVABLE_PROMPT', join(moreDir, 'LOVABLE-PROMPT.md'), info);
   createDocFromTemplate('ERASER_DSL', join(moreDir, 'ERASER-DSL.md'), info);
+  createDocFromTemplate('AWS_SUPERVISOR', join(moreDir, 'AWS-SUPERVISOR.md'), info);
 
   // Create config file in target directory
   createProjectConfig(targetDir, info);
@@ -572,6 +573,7 @@ ${colors.cyan}Created structure:${colors.reset}
   ├── PLAN.md          ${colors.yellow}← Completar plan${colors.reset}
   ├── LOVABLE-PROMPT.md
   ├── ERASER-DSL.md
+  ├── AWS-SUPERVISOR.md  ${colors.green}← Reglas AWS para agentes${colors.reset}
   ├── TUTORIAL.md
   ├── SS/              ${colors.cyan}← Screenshots aquí${colors.reset}
   └── diagrams/        ${colors.cyan}← Diagramas PNG aquí${colors.reset}

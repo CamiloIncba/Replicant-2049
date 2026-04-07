@@ -311,6 +311,45 @@ Cada estándar tiene:
 
 ---
 
+## AWS — Infraestructura Cloud
+
+> Estándares de compliance para proyectos desplegados en AWS. Referencia detallada en `Skills/arch/AWS-SUPERVISOR.md`.
+
+### AWS-01 · Configuración de Deploy
+**Descripción:** El backend tiene los archivos necesarios para deploy en Elastic Beanstalk.
+**Verificación:**
+- Existe `Procfile` en el backend con comando `web:`
+- Existe directorio `.platform/` con configuración de nginx o similar
+- Existe `.github/workflows/` con al menos un workflow de deploy (`.yml`)
+
+**Justificación:** Sin Procfile y configuración de plataforma, EB no puede ejecutar la aplicación. Sin CI/CD, los deploys son manuales y propensos a error.
+
+---
+
+### AWS-02 · Secrets Externalizados
+**Descripción:** Las credenciales y secrets no están hardcodeados en el código.
+**Verificación:**
+- `.env` está en `.gitignore` del backend y frontend
+- Existe `.env.example` con valores placeholder (sin secrets reales)
+- El código referencia variables de entorno (`process.env`, `import.meta.env`), no strings hardcodeados
+- NO hay connection strings, API keys, o passwords literales en archivos `.ts`, `.js`, `.mjs`
+
+**Justificación:** Secrets en el código son un riesgo de seguridad crítico. Deben estar en Secrets Manager o variables de entorno.
+
+---
+
+### AWS-03 · AWS-SUPERVISOR.md
+**Descripción:** El proyecto tiene un documento de reglas para agentes que interactúan con AWS.
+**Verificación:**
+- Existe `{PROJECT}-more/AWS-SUPERVISOR.md`
+- Tiene más de 500 caracteres de contenido real
+- No contiene placeholders `{{PROYECTO}}`
+- Contiene secciones sobre autorización, operaciones prohibidas, y naming convention
+
+**Justificación:** Sin reglas documentadas, los agentes pueden crear, modificar o eliminar recursos en una cuenta AWS de producción multi-empresa. Ver `Skills/arch/AWS-SUPERVISOR.md`.
+
+---
+
 ### QA-05 · Test Coverage Mínimo
 **Descripción:** El proyecto debe tener scripts de test definidos y directorio de tests con archivos.  
 **Verificación:**
@@ -359,6 +398,9 @@ Cada estándar tiene:
 | ARCH-04 | SKIP_AUTH Dev Mode | Arquitectura |
 | ARCH-05 | Estructura Backend Estándar | Arquitectura |
 | ARCH-06 | Estructura Frontend Estándar | Arquitectura |
+| AWS-01 | Configuración de Deploy | AWS |
+| AWS-02 | Secrets Externalizados | AWS |
+| AWS-03 | AWS-SUPERVISOR.md | AWS |
 | QA-01 | Pre-commit Hooks | Quality |
 | QA-02 | Tests E2E | Quality |
 | QA-03 | Linting | Quality |
@@ -366,4 +408,4 @@ Cada estándar tiene:
 | QA-05 | Test Coverage Mínimo | Quality |
 | QA-06 | Workflow de Desarrollo Documentado | Quality |
 
-**Total: 29 estándares obligatorios**
+**Total: 32 estándares obligatorios**

@@ -28,6 +28,7 @@ Cuando el usuario solicite crear un CLAUDE.md:
 |-----------|--------|-------------|
 | [SRS.md](./SRS.md) | ✅ Aprobado | Especificación de requisitos (inmutable) |
 | [PLAN.md](./PLAN.md) | ✅ Aprobado | Plan de trabajo (inmutable) |
+| [AWS-SUPERVISOR.md](./AWS-SUPERVISOR.md) | ✅ Aprobado | Reglas AWS para agentes (obligatorio) |
 | [TUTORIAL.md](./TUTORIAL.md) | 🔄 En progreso | Guía de usuario |
 | [README.md](../{{PROYECTO}}-backend/README.md) | ✅ Actualizado | Setup técnico |
 
@@ -157,6 +158,7 @@ Antes de modificar estos archivos, verificar dependencias:
 - `src/app.module.ts` — Módulo principal
 - `src/auth/` — Configuración de Auth0
 - `src/config/` — Variables de entorno
+- `AWS-SUPERVISOR.md` — Reglas obligatorias para agentes que tocan AWS
 
 ---
 
@@ -167,6 +169,7 @@ Antes de deploy a producción:
 - [ ] Todos los RF al 100%
 - [ ] Tests pasando
 - [ ] TUTORIAL.md actualizado
+- [ ] AWS-SUPERVISOR.md presente y completado
 - [ ] Variables de entorno configuradas en AWS
 - [ ] Capacitación al cliente completada
 

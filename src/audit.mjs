@@ -484,6 +484,92 @@ function buildChecks(project) {
       },
     },
 
+    // ─── AWS ───────────────────────────────────────────────
+    {
+      id: 'AWS-01',
+      name: 'Configuración de Deploy',
+      category: 'AWS',
+      check() {
+        if (!hasBackend) return { status: 'warn', detail: 'Sin backend detectado' };
+        const issues = [];
+
+        // Procfile
+        const procfile = readIfExists(join(backend, 'Procfile'));
+        if (!procfile) {
+          issues.push('sin Procfile');
+        } else if (!/^web:/m.test(procfile)) {
+          issues.push('Procfile sin comando web:');
+        }
+
+        // .platform/
+        const hasPlatform = existsSync(join(backend, '.platform'));
+        if (!hasPlatform) issues.push('sin .platform/');
+
+        // CI/CD workflow
+        const workflowDir = join(backend, '.github', 'workflows');
+        const hasWorkflow = existsSync(workflowDir) &&
+          readdirSync(workflowDir).some(f => f.endsWith('.yml') || f.endsWith('.yaml'));
+        if (!hasWorkflow) issues.push('sin workflow CI/CD');
+
+        if (issues.length > 1) return { status: 'fail', detail: issues.join(', ') };
+        if (issues.length === 1) return { status: 'warn', detail: issues[0] };
+        return { status: 'pass', detail: 'Procfile + .platform/ + CI/CD OK' };
+      },
+    },
+    {
+      id: 'AWS-02',
+      name: 'Secrets Externalizados',
+      category: 'AWS',
+      check() {
+        const issues = [];
+
+        // .env in .gitignore
+        for (const [label, dir] of [['backend', backend], ['frontend', frontend]]) {
+          if (!existsSync(dir)) continue;
+          const gitignore = readIfExists(join(dir, '.gitignore')) || '';
+          const hasEnvIgnored = /^\.env$/m.test(gitignore) || /^\.env\b/m.test(gitignore);
+          if (!hasEnvIgnored) issues.push(`${label}: .env no está en .gitignore`);
+
+          // .env.example exists
+          const hasExample = existsSync(join(dir, '.env.example'));
+          if (!hasExample) issues.push(`${label}: sin .env.example`);
+        }
+
+        // Check for hardcoded secrets in source
+        if (hasBackend) {
+          const secretPatterns = /(?:mongodb\+srv:\/\/|mongodb:\/\/)[^\s'"]+@|(?:password|secret|api.?key)\s*[:=]\s*['"][^'"]{8,}['"]/i;
+          const srcDir = join(backend, 'src');
+          if (existsSync(srcDir)) {
+            const hardcoded = grepDir(srcDir, secretPatterns.source, ['.ts', '.js', '.mjs']);
+            // Filter out .example and .env files
+            const realHardcoded = hardcoded.filter(f => !f.includes('.example') && !f.includes('.env'));
+            if (realHardcoded.length > 0) issues.push(`${realHardcoded.length} archivo(s) con posibles secrets hardcodeados`);
+          }
+        }
+
+        if (issues.length > 1) return { status: 'fail', detail: issues.join(', ') };
+        if (issues.length === 1) return { status: 'warn', detail: issues[0] };
+        return { status: 'pass', detail: '.env ignorado + .env.example + sin hardcoded secrets' };
+      },
+    },
+    {
+      id: 'AWS-03',
+      name: 'AWS-SUPERVISOR.md',
+      category: 'AWS',
+      check() {
+        const path = join(more, 'AWS-SUPERVISOR.md');
+        if (!existsSync(path)) return { status: 'fail', detail: 'No existe AWS-SUPERVISOR.md en -more/' };
+        const content = readIfExists(path) || '';
+        if (content.length < 500) return { status: 'fail', detail: `AWS-SUPERVISOR.md tiene solo ${content.length} chars (mín 500)` };
+        if (/\{\{PROYECTO\}\}/.test(content)) return { status: 'fail', detail: 'Contiene placeholders {{PROYECTO}}' };
+        const sections = ['autorización', 'prohibid', 'naming', 'inventario'].filter(
+          (s) => content.toLowerCase().includes(s)
+        );
+        if (sections.length < 2) return { status: 'warn', detail: `Faltan secciones clave (encontradas: ${sections.join(', ')})` };
+        return { status: 'pass', detail: `${content.length} chars, secciones OK` };
+      },
+    },
+
     // ─── QA ────────────────────────────────────────────────
     {
       id: 'QA-01',
@@ -679,8 +765,8 @@ function printReport(project, results, verbose) {
   console.log('');
 
   // Group by category
-  const categories = ['DOC', 'UX', 'FEAT', 'QA'];
-  const categoryNames = { DOC: 'Documentación', UX: 'Experiencia de Usuario', FEAT: 'Funcionalidades', QA: 'Calidad' };
+  const categories = ['DOC', 'UX', 'FEAT', 'AWS', 'QA'];
+  const categoryNames = { DOC: 'Documentación', UX: 'Experiencia de Usuario', FEAT: 'Funcionalidades', AWS: 'AWS Infraestructura', QA: 'Calidad' };
 
   for (const cat of categories) {
     const catResults = results.filter((r) => r.category === cat);
